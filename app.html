@@ -88,7 +88,7 @@ button:focus-visible, .btn:focus-visible { outline: 1px solid var(--accent); out
 .progress .row .n { color: var(--faint); }
 .progress .row .track { background: var(--band1); height: 8px; }
 .progress .row .fill { background: var(--band2); height: 8px; transition: width 250ms; }
-.progress .row.active .fill { background: var(--accent); }
+.progress .row.active .fill, .progress .row.complete .fill { background: var(--accent); }
 .progress .row .val { text-align: right; color: var(--muted); }
 @media (max-width: 720px) { .progress .row { grid-template-columns: 20px 1fr 80px; } .progress .row .track { display: none; } }
 
@@ -183,8 +183,8 @@ table.matrix td.cell { min-width: 110px; }
       <button class="primary" id="analyzeBtn" disabled>Analyze</button>
       <button id="lastBtn" class="hidden"></button>
     </div>
-    <p class="state" id="uploadState"></p>
     <div class="progress hidden" id="progress"></div>
+    <p class="state" id="uploadState"></p>
     <div class="upload hidden" id="stopRow"><button id="stopBtn">Stop analysis</button></div>
     <div class="ticker hidden" id="ticker"><p class="now" id="tickNow"></p><p class="just" id="tickJust"></p></div>
   </section>
@@ -636,7 +636,7 @@ function renderProgress(job) {
   const t = job.total || 0;
   const maskDone = job.phase === "masking" ? job.done : (["classifying", "done"].includes(job.phase) ? t : 0);
   const clsDone = job.phase === "classifying" ? job.done : (job.phase === "done" ? t : 0);
-  const row = (n, label, d, active, valText) => `<div class="row${active ? " active" : ""}"><span class="n">${n}</span><span class="${active ? "fg" : ""}">${label}</span>
+  const row = (n, label, d, active, valText) => `<div class="row${active ? " active" : ""}${t && d >= t ? " complete" : ""}"><span class="n">${n}</span><span class="${active ? "fg" : ""}">${label}</span>
       <div class="track"><div class="fill" style="width:${t ? (d / t) * 100 : 0}%"></div></div><span class="val">${valText}</span></div>`;
   p.innerHTML = row(1, "Protecting personal data", maskDone, job.phase === "masking", `${maskDone} of ${t}`)
     + row(2, "Sorting each case", clsDone, job.phase === "classifying", `${clsDone} of ${t}`)
@@ -671,13 +671,17 @@ function showResults(s) {
   renderStep3(s.results, s.alerts);
   const when = s.results.run_at.replace("T", " ").slice(0, 16);
   $("currentLine").innerHTML = `Showing <span class="fg">${esc(s.results.source || "the last analysis")}</span>, analyzed ${esc(when)}, ${s.results.records.length} cases.`;
-  ["picker", "progress", "ticker", "stopRow"].forEach(id => $(id).classList.add("hidden"));
+  ["picker", "ticker", "stopRow"].forEach(id => $(id).classList.add("hidden"));
   $("current").classList.remove("hidden");
+  const n = s.results.records.length;
+  renderProgress({phase: "done", done: n, total: n});  // finished: all three rows filled
+  const took = s.seconds ? `, in ${s.seconds >= 60 ? Math.floor(s.seconds / 60) + " min " : ""}${Math.round(s.seconds % 60)} s` : "";
+  $("uploadState").innerHTML = `<span class="fg">Done. ${n} cases analyzed${took}.</span> The three steps are below.`;
   store(VIEW_KEY, true);
 }
 
 $("newBtn").onclick = () => { $("uploadState").textContent = ""; showPicker(); };
-$("lastBtn").onclick = async () => { $("uploadState").textContent = ""; showResults(await (await fetch("/api/state")).json()); };
+$("lastBtn").onclick = async () => showResults(await (await fetch("/api/state")).json());
 
 function watchJob(id, total) {
   store(JOB_KEY, {id, total});
@@ -713,8 +717,7 @@ function watchJob(id, total) {
     const state = await (await fetch("/api/state")).json();
     LAST = state.results;
     if (job.phase === "done") {
-      showResults(state);
-      $("uploadState").textContent = "Done. The three steps are below.";
+      showResults({...state, seconds: job.seconds});
       return;
     }
     showPicker();

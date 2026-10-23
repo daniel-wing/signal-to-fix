@@ -10,6 +10,7 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime
 
 from classify import ClassificationUnavailable, available, call_llm, classify
@@ -268,7 +269,7 @@ def serve(port=None):
         try:
             records = analyze(cfg, cases, progress, stop=lambda: job["stop"])
             save_results(cfg, records, job["name"])
-            job.update(phase="done", records=records)
+            job.update(phase="done", records=records, seconds=round(time.time() - job["started"]))
         except Stopped:
             job.update(phase="stopped")  # nothing saved: the last analysis stays as it was
         except Exception as e:
@@ -323,7 +324,7 @@ def serve(port=None):
                 return self.send(400, {"error": str(e)})
             jid = str(next(job_ids))
             job = {"id": jid, "name": str(body.get("name") or "uploaded file"), "phase": "starting",
-                   "done": 0, "total": len(cases), "records": [], "error": None, "stop": False}
+                   "done": 0, "total": len(cases), "records": [], "error": None, "stop": False, "started": time.time()}
             jobs[jid] = job
             threading.Thread(target=run_job, args=(job, cases), daemon=True).start()
             self.send(200, {"id": jid, "total": len(cases)})
