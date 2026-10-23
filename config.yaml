@@ -1,8 +1,9 @@
 # Signal-to-Fix configuration.
-# Everything you might want to change during a demo lives here. No code edits needed.
+# Everything you might want to change during a demo lives here or in prompt.txt.
+# Both files are read again on every run. No code edits needed.
 
 # Local masking model (runs on this machine, never sends data out).
-# Server: http://localhost:11434   Mac: http://localhost:11434 (Ollama for Mac)
+# Server and Mac both use Ollama on its default port.
 ollama:
   url: http://localhost:11434
   model: qwen2.5:3b
@@ -10,66 +11,71 @@ ollama:
 
 # Cloud classifier. Receives masked text only.
 llm:
-  provider: anthropic
-  url: https://api.anthropic.com/v1/messages
   model: claude-sonnet-5-5
-  api_key_env: ANTHROPIC_API_KEY   # name of the environment variable, never the key itself
-  max_tokens: 1200
-  timeout_seconds: 60
-  retries: 3                       # attempts before a case is queued for retry
-  backoff_seconds: 2
-  parallel_requests: 4
+  api_key_env: ANTHROPIC_API_KEY   # name of the variable in .env, never the key itself
+  effort: low                      # low | medium | high
+  max_tokens: 4000
+  timeout_seconds: 90
 
-# Routing thresholds (assumptions, tune after shadow mode).
+# Routing (A6: demo policy, not validated; confidence is self-reported by the model).
 routing:
-  auto_tag_min_confidence: 0.85    # at or above this, and no risk: auto-tag
-  review_min_confidence: 0.60      # 0.60 to 0.85: human review queue; below: human-led
-  ambiguity_alt_confidence: 0.30   # activation vs decline: second guess this strong goes to review
-  secondary_owner_min_score: 0.50  # any other P above this also gets routed
-  risk_categories: [account_access]
-  # Words that force human-led handling. Matched on masked text, lowercase, accents ignored.
+  auto_tag_min_confidence: 0.85    # at or above: auto-tag
+  review_min_confidence: 0.60      # 0.60 to below 0.85: review queue; below 0.60: human-led
+  secondary_owner_min_score: 0.50  # any other P above this also gets an owner
+  # Any of these words forces human-led handling. Matched on the masked text,
+  # lowercase, accents ignored. Add a line to add a word.
   risk_words:
+    # fraud
     - fraude
-    - no reconozco
-    - no fui yo
-    - no lo hice yo
-    - hackearon
-    - hackeo
-    - robo
-    - robaron
+    - fraud
+    - estafa
     - suplantacion
-    - alguien entro
-    - alguien mas entro
+    # unrecognized charge
+    - no reconozco
     - cargo desconocido
     - cargos desconocidos
-  # Account-access cases are only risk when they show takeover signals.
-  access_takeover_words:
+    - no autorice
     - no fui yo
+    # account takeover
+    - hackearon
+    - hackeo
     - alguien entro
     - alguien mas entro
     - cambiaron mi correo
     - cambiaron mi telefono
-    - codigo que no pedi
-    - no reconozco
+    - robaron
+    # lockout
+    - cuenta bloqueada
+    - bloquearon mi cuenta
+    - me bloquearon
+    - bloqueo de cuenta
+    # legal
+    - abogado
+    - demanda
+    - denuncia
+    - profeco
+    - procon
+    - superintendencia
+    - accion legal
 
-# Early warning (simple, editable rule).
+# Early warning (A5).
 alerts:
-  as_of: "2026-10-20"              # "today" for the demo data
-  recent_days: 3
-  baseline_days: 30
-  min_ratio: 2.0                   # recent share at least 2x the 30-day share
+  recent_days: 3                   # the last 3 days
+  baseline_days: 27                # compared with the 27 days before
+  min_ratio: 2.0                   # recent share at least 2x the baseline share
   min_recent_cases: 3              # and at least this many cases in the recent window
-  cluster_similarity: 0.5          # word overlap needed to group two emerging themes
+
+# Evaluation gate (A7).
+eval:
+  accuracy_gate: 0.85
 
 server:
-  host: 127.0.0.1                  # use 0.0.0.0 only on a trusted network
+  host: 127.0.0.1
   port: 8000
 
 paths:
   cases: cases_raw.json
   prompt: prompt.txt
-  reference_examples: reference_examples.json
   vault: vault.json
-  queue: queue.json
-  results: outputs/results.json
-  evals_dir: evals
+  results: results/latest.json
+  eval_runs: eval_runs

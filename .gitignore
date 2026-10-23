@@ -1,6 +1,7 @@
-vault.json
-queue.json
 .env
+vault.json
+.venv/
+results/
 __pycache__/
 *.pyc
 .DS_Store
