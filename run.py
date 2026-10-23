@@ -172,9 +172,10 @@ def serve():
             self.wfile.write(data)
 
         def do_GET(self):
-            if self.path in ("/", "/index.html"):
+            route_path = self.path.split("?")[0]
+            if route_path in ("/", "/index.html"):
                 self.send(200, (ROOT / "app.html").read_bytes(), "text/html")
-            elif self.path == "/api/state":
+            elif route_path == "/api/state":
                 self.send(200, page_state())
             else:
                 self.send(404, {"error": "not found"})

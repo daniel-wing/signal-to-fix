@@ -241,7 +241,12 @@ function render(s) {
 }
 
 async function load() {
-  try { render(await (await fetch("/api/state")).json()); }
+  try {
+    render(await (await fetch("/api/state")).json());
+    const want = new URLSearchParams(location.search).get("case");  // link straight to a case: /?case=C024
+    const rec = want && STATE.results && STATE.results.records.find(r => r.id === want);
+    if (rec && $("caseView").hidden) showCase(rec);
+  }
   catch (e) { $("status").textContent = "Could not load saved state."; }
 }
 
