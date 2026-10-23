@@ -47,8 +47,8 @@ python3 run.py serve        # opens http://localhost:8000
 On a headless server (for example the zbook, reached by SSH from a laptop), run this on the laptop. It starts the page on the server and tunnels it; Ctrl+C stops both:
 
 ```bash
-ssh -t -L 8765:localhost:8000 wing@zbook-server 'cd ~/projects/signal-to-fix && .venv/bin/python run.py serve'
-# then open http://localhost:8765 on the laptop (8765 on the laptop, 8000 on the server)
+ssh -t -L 47321:localhost:8000 wing@zbook-server 'cd ~/projects/signal-to-fix && .venv/bin/python run.py serve'
+# then open http://localhost:47321 on the laptop (47321 on the laptop, 8000 on the server)
 ```
 
 Other commands:
