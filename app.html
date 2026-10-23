@@ -65,7 +65,7 @@ table.exec a { color: var(--fg); text-decoration: none; border-bottom: 1px solid
 td.hi { color: var(--accent); }
 @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; gap: 32px; } .stats, .stats.three, .stats.five { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
 .block { margin-top: 48px; }
-.hidden { display: none; }
+.hidden { display: none !important; }
 .fade { animation: fade 250ms ease-out; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
@@ -161,7 +161,7 @@ table.matrix td.cell { min-width: 110px; }
 <div class="wrap">
   <div class="top">
     <h1>UpstreamW</h1>
-    <div class="right"><a href="/how">How it works</a><span class="synthetic">Synthetic data only</span></div>
+    <div class="right"><a href="/how" target="_blank" rel="noopener">How it works</a><span class="synthetic">Synthetic data only</span></div>
   </div>
   <p class="lede">Upload a file of support conversations. UpstreamW protects personal data, sorts every case into a customer pain category and its root cause, and summarizes what customers are telling us. People read the results and write the recommendation.</p>
   <nav>
@@ -181,10 +181,11 @@ table.matrix td.cell { min-width: 110px; }
       <input type="file" id="file" accept=".json,application/json">
       <span class="filename" id="filename">No file chosen</span>
       <button class="primary" id="analyzeBtn" disabled>Analyze</button>
-      <button id="keepBtn" class="hidden">Keep the current analysis</button>
+      <button id="lastBtn" class="hidden"></button>
     </div>
     <p class="state" id="uploadState"></p>
     <div class="progress hidden" id="progress"></div>
+    <div class="upload hidden" id="stopRow"><button id="stopBtn">Stop analysis</button></div>
     <div class="ticker hidden" id="ticker"><p class="now" id="tickNow"></p><p class="just" id="tickJust"></p></div>
   </section>
 
@@ -631,32 +632,53 @@ function renderProgress(job) {
     + row(3, "Summarizing", job.phase === "done" ? t : 0, false, job.phase === "done" ? "Done" : "Waiting");
 }
 
-/* What the upload area shows: the analysis on screen with a New analysis button, or the file picker */
-function showPicker(canKeep) {
-  $("current").classList.add("hidden");
+/* What the upload area shows: the analysis on screen with a New analysis button, or the file picker.
+   A new tab starts clean; a tab that was showing an analysis or running one gets it back on reload. */
+const STEPS = ["step1", "step2", "step3"];
+let LAST = null;  // the saved analysis on the server, if any
+const store = (k, v) => { try { v === null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const stored = k => { try { return JSON.parse(sessionStorage.getItem(k)); } catch (e) { return null; } };
+const JOB_KEY = "upstreamw-job", VIEW_KEY = "upstreamw-viewing";
+
+function clearScreen() {
+  STEPS.forEach(id => $(id).classList.add("hidden"));
+  ["progress", "ticker", "stopRow", "current"].forEach(id => $(id).classList.add("hidden"));
+}
+function showPicker() {
+  clearScreen();
+  store(VIEW_KEY, null);
   $("picker").classList.remove("hidden");
-  $("keepBtn").classList.toggle("hidden", !canKeep);
+  $("analyzeBtn").disabled = !FILE;
+  if (LAST) $("lastBtn").textContent = `Open the last analysis (${LAST.records.length} cases, ${LAST.run_at.replace("T", " ").slice(0, 16)})`;
+  $("lastBtn").classList.toggle("hidden", !LAST);
 }
 function showResults(s) {
+  LAST = s.results;
   CURRENT = s.results.records;
   renderStep1(CURRENT);
   renderStep2(CURRENT);
   renderStep3(s.results, s.alerts);
   const when = s.results.run_at.replace("T", " ").slice(0, 16);
   $("currentLine").innerHTML = `Showing <span class="fg">${esc(s.results.source || "the last analysis")}</span>, analyzed ${esc(when)}, ${s.results.records.length} cases.`;
-  $("picker").classList.add("hidden");
+  ["picker", "progress", "ticker", "stopRow"].forEach(id => $(id).classList.add("hidden"));
   $("current").classList.remove("hidden");
-  $("progress").classList.add("hidden");
-  $("ticker").classList.add("hidden");
+  store(VIEW_KEY, true);
 }
 
-$("newBtn").onclick = () => { showPicker(true); $("uploadState").textContent = ""; };
-$("keepBtn").onclick = () => { $("picker").classList.add("hidden"); $("current").classList.remove("hidden"); $("uploadState").textContent = ""; };
+$("newBtn").onclick = () => { $("uploadState").textContent = ""; showPicker(); };
+$("lastBtn").onclick = async () => { $("uploadState").textContent = ""; showResults(await (await fetch("/api/state")).json()); };
 
 function watchJob(id, total) {
+  store(JOB_KEY, {id, total});
+  clearScreen();
   $("picker").classList.add("hidden");
-  $("current").classList.add("hidden");
-  ["step1", "step2", "step3"].forEach(s => $(s).classList.add("hidden"));
+  $("stopRow").classList.remove("hidden");
+  $("stopBtn").disabled = false;
+  $("stopBtn").onclick = async () => {
+    $("stopBtn").disabled = true;
+    $("tickNow").textContent = "Stopping. Cases already sent finish first, which takes up to 30 seconds.";
+    try { await fetch("/api/stop?id=" + id, {method: "POST"}); } catch (e) {}
+  };
   renderProgress({phase: "masking", done: 0, total});
   startTicker();
   let lastKey = "";
@@ -666,24 +688,28 @@ function watchJob(id, total) {
     const key = job.phase + job.done;
     if (key === lastKey) return;
     lastKey = key;
-    renderProgress(job);
-    updateTicker(job);
-    CURRENT = job.records || [];
-    if (["masking", "classifying", "done"].includes(job.phase)) renderStep1(CURRENT);
-    if (["classifying", "done"].includes(job.phase)) renderStep2(CURRENT);
-    if (job.phase === "done" || job.phase === "failed" || job.error === "Unknown analysis.") {
-      clearInterval(POLL);
-      $("analyzeBtn").disabled = !FILE;
-      const state = await (await fetch("/api/state")).json();
-      if (job.phase !== "done") {
-        $("uploadState").innerHTML = `<span class="accent">Analysis failed: ${esc(job.error)}</span>`;
-        showPicker(!!state.results);
-        return;
-      }
-      showResults(state);
-      $("progress").classList.remove("hidden");
-      $("uploadState").textContent = "Done. The three steps are below.";
+    const ended = ["done", "failed", "stopped"].includes(job.phase) || job.error === "Unknown analysis.";
+    if (!ended) {
+      renderProgress(job);
+      updateTicker(job);
+      CURRENT = job.records || [];
+      renderStep1(CURRENT);
+      if (job.phase === "classifying") renderStep2(CURRENT);
+      return;
     }
+    clearInterval(POLL);
+    store(JOB_KEY, null);
+    const state = await (await fetch("/api/state")).json();
+    LAST = state.results;
+    if (job.phase === "done") {
+      showResults(state);
+      $("uploadState").textContent = "Done. The three steps are below.";
+      return;
+    }
+    showPicker();
+    $("uploadState").innerHTML = job.phase === "stopped"
+      ? '<span class="accent">Analysis stopped. Nothing from it was saved; the last analysis is unchanged.</span>'
+      : `<span class="accent">Analysis failed: ${esc(job.error)}</span>`;
   }, 1000);
 }
 
@@ -713,9 +739,12 @@ document.addEventListener("click", ev => {
   try {
     const s = await (await fetch("/api/state")).json();
     renderEval(s.eval);
-    if (s.running) watchJob(s.running.id, s.running.total);  // came back while an analysis is running
-    else if (s.results) showResults(s);                       // came back later: the last analysis stays on screen
-    else showPicker(false);
+    LAST = s.results;
+    const mine = stored(JOB_KEY);
+    if (s.running) watchJob(s.running.id, s.running.total);                              // an analysis is running: follow it
+    else if (mine && (await fetch("/api/job?id=" + mine.id)).ok) watchJob(mine.id, mine.total);  // this tab's run (older server)
+    else if (s.results && stored(VIEW_KEY)) showResults(s);                              // this tab was showing it: keep it
+    else showPicker();                                                                   // a new visit starts clean
   } catch (e) {
     $("uploadState").innerHTML = '<span class="accent">Could not reach the analysis service.</span>';
   }

@@ -164,25 +164,41 @@ def case_list(data):
     return out
 
 
-def analyze(cfg, cases, progress=None):
+class Stopped(Exception):
+    """The person pressed Stop analysis."""
+
+
+def analyze(cfg, cases, progress=None, stop=lambda: False):
     """Bulk run: mask every case locally, then classify the masked ones in parallel.
 
     cases: list of (id, text, meta). progress(phase, done, total, records) is called as work completes.
+    stop() is checked before each case starts; when it returns True, cases not yet started are dropped
+    and Stopped is raised. Model calls already under way finish on their own (up to the timeout).
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
     n = len(cases)
     records = [None] * n
+    def guarded(fn):
+        def run(i):
+            if stop():
+                raise Stopped()
+            return fn(i)
+        return run
+
     for phase, workers, fn in (
             ("masking", 2, lambda i: mask_step(cfg, *cases[i])),
             ("classifying", cfg["llm"].get("parallel_requests", 4), lambda i: classify_step(cfg, records[i]))):
         done = 0
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = {pool.submit(fn, i): i for i in range(n)}
+        pool = ThreadPoolExecutor(max_workers=workers)
+        try:
+            futures = {pool.submit(guarded(fn), i): i for i in range(n)}
             for fut in as_completed(futures):
                 records[futures[fut]] = fut.result()
                 done += 1
                 if progress:
                     progress(phase, done, n, records)
+        finally:
+            pool.shutdown(wait=not stop(), cancel_futures=True)
     return records
 
 
@@ -250,9 +266,11 @@ def serve(port=None):
         def progress(phase, done, total, records):
             job.update(phase=phase, done=done, total=total, records=records)
         try:
-            records = analyze(cfg, cases, progress)
+            records = analyze(cfg, cases, progress, stop=lambda: job["stop"])
             save_results(cfg, records, job["name"])
             job.update(phase="done", records=records)
+        except Stopped:
+            job.update(phase="stopped")  # nothing saved: the last analysis stays as it was
         except Exception as e:
             job.update(phase="failed", error=f"{type(e).__name__}: {e}")
 
@@ -287,7 +305,14 @@ def serve(port=None):
                 self.send(404, {"error": "not found"})
 
         def do_POST(self):
-            if self.path != "/api/upload":
+            route_path, _, query = self.path.partition("?")
+            if route_path == "/api/stop":
+                job = jobs.get(query.removeprefix("id="))
+                if not job:
+                    return self.send(404, {"error": "Unknown analysis."})
+                job["stop"] = True
+                return self.send(200, {"ok": True})
+            if route_path != "/api/upload":
                 return self.send(404, {"error": "not found"})
             if any(j["phase"] in ("masking", "classifying", "starting") for j in jobs.values()):
                 return self.send(409, {"error": "An analysis is already running. Wait for it to finish."})
@@ -298,7 +323,7 @@ def serve(port=None):
                 return self.send(400, {"error": str(e)})
             jid = str(next(job_ids))
             job = {"id": jid, "name": str(body.get("name") or "uploaded file"), "phase": "starting",
-                   "done": 0, "total": len(cases), "records": [], "error": None}
+                   "done": 0, "total": len(cases), "records": [], "error": None, "stop": False}
             jobs[jid] = job
             threading.Thread(target=run_job, args=(job, cases), daemon=True).start()
             self.send(200, {"id": jid, "total": len(cases)})
