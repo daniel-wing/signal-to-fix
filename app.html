@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal-to-Fix</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #fff; --ink: #1d2433; --muted: #5d6779; --line: #dde1e8;
+    --accent: #2f5bd3; --human: #b3261e; --review: #a15c00; --emerging: #6b3fb5; --auto: #1e7a3c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .banner { background: #fff4d6; border-bottom: 1px solid #ecd9a0; padding: 8px 16px; font-weight: 600; text-align: center; }
+  header { padding: 18px 16px 4px; max-width: 1280px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 22px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  main { max-width: 1280px; margin: 0 auto; padding: 8px 16px 48px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-top: 16px; }
+  h2 { margin: 0 0 12px; font-size: 17px; }
+  h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  textarea { width: 100%; min-height: 130px; font: 14px/1.4 ui-monospace, Menlo, monospace; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+  button, select { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: wait; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .muted { color: var(--muted); }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media (max-width: 900px) { .grid3, .grid2, .grid4 { grid-template-columns: 1fr; } }
+  pre { white-space: pre-wrap; word-break: break-word; margin: 0; background: #f9fafb; border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: 13px/1.45 ui-monospace, Menlo, monospace; max-height: 340px; overflow: auto; }
+  .tok { background: #e6ecfb; color: var(--accent); border-radius: 4px; padding: 0 2px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; color: #fff; font-weight: 600; font-size: 13px; }
+  .human_led { background: var(--human); } .review_queue { background: var(--review); }
+  .emerging { background: var(--emerging); } .auto_tag { background: var(--auto); }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; }
+  .bar { display: grid; grid-template-columns: 70px 1fr 44px; gap: 8px; align-items: center; margin: 6px 0 0; }
+  .bar .track { background: #eef0f4; border-radius: 4px; height: 12px; }
+  .bar .fill { background: var(--accent); height: 12px; border-radius: 4px; }
+  .quote { font-size: 13px; color: var(--muted); margin: 2px 0 6px 78px; font-style: italic; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; }
+  tr.click { cursor: pointer; } tr.click:hover { background: #f1f4fb; }
+  .alert { color: var(--human); font-weight: 700; }
+  .pass { color: var(--auto); font-weight: 700; } .fail { color: var(--human); font-weight: 700; }
+  .err { color: var(--human); font-weight: 600; }
+  .stat { font-size: 26px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="banner">Synthetic data only. LumenPay is a fictional company.</div>
+<header>
+  <h1>Signal-to-Fix</h1>
+  <p>Support conversations masked on this machine, classified by a cloud model on masked text only, routed by rules you can edit in <code>config.yaml</code>.</p>
+  <p class="muted" id="cfgline"></p>
+</header>
+<main>
+  <section>
+    <h2>Try it</h2>
+    <textarea id="input" placeholder="Paste one support conversation in Spanish, for example:
+Cliente: Hola, soy Ana Ruiz. Emitimos tarjetas el viernes y siguen en pendiente..."></textarea>
+    <div class="row">
+      <button class="primary" id="runBtn">Run live</button>
+      <span class="muted">or view a case from the saved run:</span>
+      <select id="savedSel"><option value="">(no saved run)</option></select>
+      <span id="status" class="muted"></span>
+    </div>
+  </section>
+
+  <section id="caseView" hidden>
+    <h2 id="caseTitle"></h2>
+    <div class="grid3">
+      <div><h3>1. Raw (stays on this machine)</h3><pre id="cRaw"></pre></div>
+      <div><h3>2. Masked locally</h3><pre id="cMasked"></pre></div>
+      <div><h3>3. Exactly what was sent</h3><pre id="cSent"></pre></div>
+    </div>
+    <p id="cLeak"></p>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <h3>4. Classification</h3>
+        <div id="cClass"></div>
+      </div>
+      <div>
+        <h3>5. 4P root cause</h3>
+        <div id="c4p"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <h3>6. Route and owner</h3>
+      <div id="cRoute"></div>
+    </div>
+  </section>
+
+  <section id="summary" hidden>
+    <h2>Summary of the saved run <span class="muted" id="runAt"></span></h2>
+    <div class="grid4" id="routeStats"></div>
+    <div class="grid3" style="margin-top:16px">
+      <div><h3>By reason</h3><div id="byReason"></div></div>
+      <div><h3>By top P</h3><div id="byP"></div></div>
+      <div><h3>By market</h3><div id="byMarket"></div></div>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <div><h3>Review queue</h3><div id="reviewQ"></div></div>
+      <div><h3>Emerging (a human names these)</h3><div id="emergingQ"></div></div>
+    </div>
+  </section>
+
+  <section id="alertsSec" hidden>
+    <h2>Spike alert</h2>
+    <p class="muted" id="alertRule"></p>
+    <div id="alertTable"></div>
+    <h3 style="margin-top:14px">Risk cases (shown separately)</h3>
+    <div id="riskAlert"></div>
+  </section>
+
+  <section id="evalSec" hidden>
+    <h2>Latest evaluation <span class="muted" id="evalAt"></span></h2>
+    <div id="evalBody"></div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const hiTok = s => esc(s).replace(/\[[A-Z0-9_]+_\d+\]/g, m => `<span class="tok">${m}</span>`);
+const pct = x => Math.round(x * 100) + "%";
+const ROUTE_LABEL = {human_led: "Human-led", review_queue: "Review queue", emerging: "Emerging", auto_tag: "Auto-tag"};
+let STATE = null;
+
+function topP(c) {
+  return Object.entries(c.four_p).sort((a, b) => b[1].score - a[1].score)[0][0];
+}
+
+function showCase(rec) {
+  $("caseView").hidden = false;
+  const m = rec.meta || {};
+  $("caseTitle").textContent = `Case ${rec.id}` + (m.market ? ` (${m.market}${m.channel ? ", " + m.channel : ""}${m.date ? ", " + m.date : ""})` : "");
+  $("cRaw").textContent = rec.raw;
+  $("cMasked").innerHTML = rec.masked ? hiTok(rec.masked) : '<span class="err">Masking failed.</span>';
+  $("cSent").innerHTML = rec.sent ? hiTok(rec.sent) : '<span class="err">Nothing was sent.</span>';
+  $("cLeak").innerHTML = rec.mask_problem
+    ? `<span class="err">Leak check blocked the API call: ${esc(rec.mask_problem)}</span>`
+    : `<span class="pass">Leak check passed.</span> <span class="muted">Masked: ${esc(rec.masked_tokens.join(", ") || "nothing")}</span>`;
+
+  const c = rec.classification;
+  if (c) {
+    const exp = (m.expected && m.expected.contact_reason) || m.expected_reason || m.expected_contact_reason;
+    $("cClass").innerHTML = `<dl class="kv">
+      <dt>Reason</dt><dd><b>${esc(c.contact_reason)}</b>${c.sub_reason ? " / " + esc(c.sub_reason) : ""}</dd>
+      ${exp ? `<dt>Expected</dt><dd>${esc(exp)} ${exp === c.contact_reason ? '<span class="pass">match</span>' : '<span class="fail">miss</span>'}</dd>` : ""}
+      <dt>Ambiguous with</dt><dd>${esc(c.ambiguous_with || "none")}</dd>
+      <dt>Confidence</dt><dd>${c.confidence.toFixed(2)} <span class="muted">(self-reported)</span></dd>
+      <dt>Defect</dt><dd>${c.is_defect ? "yes" : "no"}</dd>
+      <dt>Repeat</dt><dd>${c.is_repeat ? "yes" : "no"}</dd>
+      <dt>Rationale</dt><dd>${esc(c.rationale)}</dd>
+      <dt>Model</dt><dd class="muted">${esc(rec.model)}, ${rec.attempts} attempt(s)</dd></dl>`;
+    $("c4p").innerHTML = ["people", "process", "policy", "product"].map(p => {
+      const v = c.four_p[p];
+      return `<div class="bar"><span>${p}</span><div class="track"><div class="fill" style="width:${pct(v.score)}"></div></div><span>${v.score.toFixed(2)}</span></div>`
+        + (v.quote ? `<div class="quote">"${esc(v.quote)}"</div>` : "");
+    }).join("");
+  } else {
+    $("cClass").innerHTML = `<p class="err">Classification unavailable. Nothing auto-tagged.</p><p class="muted">${esc(rec.error || "")}</p>`;
+    $("c4p").innerHTML = '<p class="muted">No scores.</p>';
+  }
+  const r = rec.route;
+  $("cRoute").innerHTML = `<p><span class="badge ${r.route}">${ROUTE_LABEL[r.route]}</span> ${esc(r.why)}</p>`
+    + (r.owners.length ? "<ul>" + r.owners.map(o => `<li>${esc(o.owner)} <span class="muted">(${o.p} ${o.score.toFixed(2)})</span></li>`).join("") + "</ul>" : "");
+  $("caseView").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+function countTable(counts, total) {
+  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return "<table>" + rows.map(([k, n]) =>
+    `<tr><td>${esc(k)}</td><td class="num">${n}</td><td class="num muted">${pct(n / total)}</td></tr>`).join("") + "</table>";
+}
+
+function caseList(recs) {
+  if (!recs.length) return '<p class="muted">None.</p>';
+  return "<table><tr><th>Case</th><th>Reason</th><th>Why</th></tr>" + recs.map(r =>
+    `<tr class="click" data-id="${esc(r.id)}"><td>${esc(r.id)}</td><td>${esc(r.classification ? r.classification.contact_reason : "-")}</td><td>${esc(r.route.why)}</td></tr>`).join("") + "</table>";
+}
+
+function render(s) {
+  STATE = s;
+  const rt = s.config.routing;
+  $("cfgline").textContent = `Model ${s.config.model}. Auto-tag at ${rt.auto_tag_min_confidence}, review from ${rt.review_min_confidence}, ${rt.risk_words.length} risk words. Read live from config.yaml.`;
+  const res = s.results;
+  const sel = $("savedSel");
+  if (res) {
+    const recs = res.records;
+    sel.innerHTML = '<option value="">choose a case</option>' + recs.map(r =>
+      `<option value="${esc(r.id)}">${esc(r.id)}: ${esc(r.classification ? r.classification.contact_reason : "not classified")}, ${ROUTE_LABEL[r.route.route]}</option>`).join("");
+    $("summary").hidden = false;
+    $("runAt").textContent = `(${res.run_at}, ${recs.length} cases)`;
+    const byRoute = {}, byReason = {}, byP = {}, byMarket = {};
+    for (const r of recs) {
+      byRoute[r.route.route] = (byRoute[r.route.route] || 0) + 1;
+      const k = r.classification ? r.classification.contact_reason : "not classified";
+      byReason[k] = (byReason[k] || 0) + 1;
+      if (r.classification) { const p = topP(r.classification); byP[p] = (byP[p] || 0) + 1; }
+      const mk = (r.meta && r.meta.market) || "unknown";
+      byMarket[mk] = (byMarket[mk] || 0) + 1;
+    }
+    $("routeStats").innerHTML = ["auto_tag", "review_queue", "emerging", "human_led"].map(k =>
+      `<div><span class="badge ${k}">${ROUTE_LABEL[k]}</span><div class="stat">${byRoute[k] || 0}</div></div>`).join("");
+    $("byReason").innerHTML = countTable(byReason, recs.length);
+    $("byP").innerHTML = countTable(byP, Object.values(byP).reduce((a, b) => a + b, 0) || 1);
+    $("byMarket").innerHTML = countTable(byMarket, recs.length);
+    $("reviewQ").innerHTML = caseList(recs.filter(r => r.route.route === "review_queue"));
+    $("emergingQ").innerHTML = caseList(recs.filter(r => r.route.route === "emerging"));
+  }
+  const a = s.alerts;
+  if (a) {
+    $("alertsSec").hidden = false;
+    if (a.error) { $("alertTable").innerHTML = `<p class="muted">${esc(a.error)}</p>`; }
+    else {
+      $("alertRule").textContent = `Last window ${a.recent_window} vs ${a.baseline_window}. Alert when ${a.rule}.`;
+      $("alertTable").innerHTML = "<table><tr><th>Reason</th><th class='num'>Recent</th><th class='num'>Share</th><th class='num'>Baseline</th><th class='num'>Share</th><th class='num'>Ratio</th><th>Alert</th></tr>"
+        + a.rows.map(r => `<tr><td>${esc(r.reason)}</td><td class="num">${r.recent}</td><td class="num">${pct(r.recent_share)}</td><td class="num">${r.baseline}</td><td class="num">${pct(r.baseline_share)}</td><td class="num">${r.ratio === null ? "new" : r.ratio.toFixed(2)}</td><td>${r.alert ? '<span class="alert">ALERT</span>' : ""}</td></tr>`).join("") + "</table>";
+      const k = a.risk;
+      $("riskAlert").innerHTML = `<p>${k.recent} risk case(s) in the last window (${pct(k.recent_share)}) vs ${k.baseline} in the baseline (${pct(k.baseline_share)}). ${k.alert ? '<span class="alert">ALERT</span>' : "No alert."} All risk cases are human-led.</p>`;
+    }
+  }
+  const e = s.eval;
+  if (e) {
+    $("evalSec").hidden = false;
+    $("evalAt").textContent = `(${e.run_at})`;
+    $("evalBody").innerHTML = `<table>
+      <tr><th>Check</th><th>Result</th><th>Target</th></tr>
+      <tr><td>Reason accuracy</td><td>${pct(e.accuracy)} (${e.correct}/${e.labeled})</td><td>at least ${pct(e.accuracy_gate)}</td></tr>
+      <tr><td>Activation vs decline confusions</td><td>${e.activation_decline_confusions.length}</td><td>as few as possible</td></tr>
+      <tr><td>PII found in what was sent</td><td>${e.pii_in_sent.length}</td><td>0</td></tr>
+      <tr><td>Risk cases not sent to a human</td><td>${e.risk_not_human_led.length}</td><td>0</td></tr></table>
+      <p>Gate 0 offline checks: <span class="${e.passes ? "pass" : "fail"}">${e.passes ? "PASS" : "FAIL"}</span>
+      <span class="muted">Human-human agreement not yet measured. Labels were written with AI help, so this is agreement with reviewed labels, not real-world accuracy.</span></p>`;
+  }
+}
+
+async function load() {
+  try { render(await (await fetch("/api/state")).json()); }
+  catch (e) { $("status").textContent = "Could not load saved state."; }
+}
+
+$("runBtn").onclick = async () => {
+  const text = $("input").value.trim();
+  if (!text) { $("status").textContent = "Paste a conversation first."; return; }
+  $("runBtn").disabled = true;
+  $("status").textContent = "Masking locally, checking for leaks, then classifying...";
+  try {
+    const r = await fetch("/api/run", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text})});
+    const rec = await r.json();
+    if (!r.ok) throw new Error(rec.error || r.status);
+    showCase(rec);
+    $("status").textContent = "";
+    load();  // pick up any config edits in the header line
+  } catch (e) {
+    $("status").innerHTML = `<span class="err">Run failed: ${esc(e.message)}</span>`;
+  } finally { $("runBtn").disabled = false; }
+};
+$("savedSel").onchange = () => {
+  const rec = STATE && STATE.results && STATE.results.records.find(r => r.id === $("savedSel").value);
+  if (rec) showCase(rec);
+};
+document.addEventListener("click", ev => {
+  const tr = ev.target.closest("tr.click");
+  if (!tr || !STATE || !STATE.results) return;
+  const rec = STATE.results.records.find(r => r.id === tr.dataset.id);
+  if (rec) showCase(rec);
+});
+load();
+</script>
+</body>
+</html>

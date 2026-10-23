@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 from classify import ClassificationUnavailable, call_llm, classify
-from common import api_key, load_config, ollama_models, path
+from common import ROOT, api_key, load_config, ollama_models, path
 from mask import case_text, leak_check, mask, save_vault
 from route import route
 
@@ -134,12 +134,74 @@ def run_all(cfg, only=None):
     return records
 
 
+def page_state():
+    """Everything the page shows from saved files. Config is re-read so live edits appear."""
+    from alerts import compute
+    cfg = load_config()
+    state = {"config": {"model": cfg["llm"]["model"], "routing": cfg["routing"], "alerts": cfg["alerts"]},
+             "results": None, "alerts": None, "eval": None}
+    res = path(cfg, "results")
+    if res.exists():
+        state["results"] = json.loads(res.read_text(encoding="utf-8"))
+        state["alerts"] = compute(cfg, state["results"]["records"])
+    evals = sorted(path(cfg, "eval_runs").glob("*.json")) if path(cfg, "eval_runs").exists() else []
+    if evals:
+        state["eval"] = json.loads(evals[-1].read_text(encoding="utf-8"))
+    return state
+
+
+def serve():
+    import webbrowser
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from itertools import count
+
+    live_ids = count(1)
+
+    class Handler(BaseHTTPRequestHandler):
+        def send(self, code, body, ctype="application/json"):
+            data = body if isinstance(body, bytes) else json.dumps(body, ensure_ascii=False).encode()
+            self.send_response(code)
+            self.send_header("Content-Type", ctype + "; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):
+            if self.path in ("/", "/index.html"):
+                self.send(200, (ROOT / "app.html").read_bytes(), "text/html")
+            elif self.path == "/api/state":
+                self.send(200, page_state())
+            else:
+                self.send(404, {"error": "not found"})
+
+        def do_POST(self):
+            if self.path != "/api/run":
+                return self.send(404, {"error": "not found"})
+            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            text = str(body.get("text", "")).strip()
+            if not text:
+                return self.send(400, {"error": "Paste a conversation first."})
+            self.send(200, process(load_config(), f"LIVE-{next(live_ids)}", text))
+
+        def log_message(self, fmt, *args):
+            pass
+
+    cfg = load_config()
+    host, port = cfg["server"]["host"], cfg["server"]["port"]
+    url = f"http://localhost:{port}"
+    print(f"Serving {url}  (Ctrl+C to stop)")
+    try:
+        webbrowser.open(url)
+    except Exception:
+        pass
+    ThreadingHTTPServer((host, port), Handler).serve_forever()
+
+
 def main(argv):
     if argv[:1] == ["check"]:
         sys.exit(0 if check() else 1)
     if argv[:1] == ["serve"]:
-        import server
-        server.serve(load_config())
+        serve()
         return
     if argv and argv[0] not in ("--only",):
         print(__doc__)
