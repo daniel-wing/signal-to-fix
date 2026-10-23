@@ -1,4 +1,6 @@
 """Routing rules, applied in order. Thresholds and risk words come from config.yaml."""
+import re
+
 from common import normalize
 
 ACT_DEC = {"card_activation", "payment_declined"}
@@ -11,8 +13,10 @@ OWNERS = {
 
 
 def risk_hits(cfg, masked_text):
+    """Risk words found as whole words ("robaron" must not match inside "aprobaron")."""
     text = normalize(masked_text)
-    return [w for w in cfg["routing"]["risk_words"] if normalize(w) in text]
+    return [w for w in cfg["routing"]["risk_words"]
+            if re.search(r"(?<!\w)" + re.escape(normalize(w)) + r"(?!\w)", text)]
 
 
 def owners(cfg, result):

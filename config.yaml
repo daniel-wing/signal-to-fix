@@ -26,8 +26,8 @@ routing:
   auto_tag_min_confidence: 0.85    # at or above: auto-tag
   review_min_confidence: 0.60      # 0.60 to below 0.85: review queue; below 0.60: human-led
   secondary_owner_min_score: 0.50  # any other P above this also gets an owner
-  # Any of these words forces human-led handling. Matched on the masked text,
-  # lowercase, accents ignored. Add a line to add a word.
+  # Any of these words forces human-led handling. Matched as whole words on the
+  # masked text, lowercase, accents ignored. Add a line to add a word.
   risk_words:
     # fraud
     - fraude
@@ -48,11 +48,19 @@ routing:
     - cambiaron mi correo
     - cambiaron mi telefono
     - robaron
-    # lockout
+    # lockout (Spanish, plus Portuguese as written in WhatsApp)
     - cuenta bloqueada
+    - cuenta esta bloqueada
+    - cuenta sigue bloqueada
+    - cuenta se bloqueo
     - bloquearon mi cuenta
     - me bloquearon
     - bloqueo de cuenta
+    - no puedo entrar
+    - conta bloqueada
+    - conta ta bloqueada
+    - conta esta bloqueada
+    - nao consigo entrar
     # legal
     - abogado
     - demanda
