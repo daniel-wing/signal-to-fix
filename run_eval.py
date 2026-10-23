@@ -125,7 +125,8 @@ def main(argv):
         source = "saved run results/latest.json"
     else:
         records = run_all(cfg)
-        source = "fresh run against the API"
+        source = ("fresh run through Claude Code" if cfg["llm"]["backend"] == "claude_code"
+                  else "fresh run against the Anthropic API")
     s = score(cfg, records, cases)
     run_at = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     out_dir = path(cfg, "eval_runs")

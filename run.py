@@ -1,4 +1,4 @@
-"""UpstreamW entry point.
+"""UpstreamW entry point (v0.1).
 
   python3 run.py check            config, Ollama, model access, one tiny model call
   python3 run.py                  run every case in cases_raw.json, save results/latest.json
@@ -363,7 +363,7 @@ def serve(port=None):
     cfg = load_config()
     host, port = cfg["server"]["host"], port or cfg["server"]["port"]
     url = f"http://localhost:{port}"
-    print(f"Serving {url}  (Ctrl+C to stop)")
+    print(f"UpstreamW v0.1. Serving {url}  (Ctrl+C to stop)")
     print("Password: on (UPSTREAMW_PASSWORD in .env)" if password else "Password: off (set UPSTREAMW_PASSWORD in .env before publishing)")
     if os.environ.get("DISPLAY") or sys.platform == "darwin":
         try:

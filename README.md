@@ -1,4 +1,4 @@
-# UpstreamW
+# UpstreamW v0.1
 
 A small working prototype of one internal AI workflow for LumenPay (a synthetic company; business case Deliverable 4). It turns closed support conversations into classified, routed signals for Operations and Product, without sending personal data to the cloud.
 
@@ -8,7 +8,7 @@ It does not make business recommendations. It gives the people who review cases 
 
 ## What it does
 
-Trigger: a closed support conversation (from the case file, or pasted into the page).
+Trigger: a file of closed support conversations uploaded on the page (or the case file, from the command line).
 
 1. **Mask on this machine.** Regular expressions replace emails, phones, card numbers, "termina en 1234", account IDs, RFC, NIT, CPF, CNPJ and amounts. A small local model (`qwen2.5:3b` via Ollama) finds names and addresses; Python replaces them. Tokens look like `[NAME_1]`; the token map is kept in `vault.json`, which never leaves the machine.
 2. **Leak check.** Before any call to the cloud model, the regular expressions run again and every original value from the token map is searched for. If anything remains, the call is blocked and the case goes to a human.
@@ -27,9 +27,9 @@ The page is a bulk analytics tool: upload a JSON file of cases and it shows thre
 
 1. **Protect personal data:** every case before and after, with what was hidden highlighted, and counts by type.
 2. **Sort each case:** customer pain category, the 4P shares (scores normalized to 100%), confidence and next step for every row.
-3. **What customers are telling us:** the main pain categories, the 4P breakdown per category, spike alerts, and per-category detail with customer quotes.
+3. **What customers are telling us:** a summary at a glance (headline numbers, key findings written by fixed rules, a table per category, root cause overall, cases by market), spike alerts, every case that fits no category in full, then the deeper analysis: the 4P breakdown per category and per-category detail with customer quotes.
 
-A plain-language explanation for non-technical readers is at `/how`. A 60-case upload takes about 1 minute 45 seconds (masking about 1 minute, classification in parallel about 45 seconds). "Show the last analysis" opens the previous result instantly, and `/?last` opens it directly.
+A plain-language explanation for non-technical readers is at `/how`. A 60-case upload takes about 1 minute 45 seconds (masking about 1 minute, classification in parallel about 45 seconds). A new visit starts clean, with "Open the last analysis" to see the previous result instantly. While a run is under way the page shows progress bars, live commentary and a Stop analysis button (nothing from a stopped run is saved); when it finishes, the filled bars stay with a Done line and the time taken. A tab that was showing or running an analysis gets it back on reload; "How it works" opens in a new tab.
 
 ## Setup
 
@@ -85,7 +85,7 @@ All testers share one app: the same last analysis, one analysis at a time, on th
 
 ## Changing things live
 
-`config.yaml` and `prompt.txt` are read again on every run, including every "Run live" click on the page. No restart needed.
+`config.yaml` and `prompt.txt` are read again on every run, including every upload on the page. No restart needed. Changes to Python files need a server restart.
 
 - **Threshold:** in `config.yaml`, change `auto_tag_min_confidence: 0.85` to `0.90`. Run a case again.
 - **Risk word:** add a line under `risk_words`. Matching ignores case and accents.
@@ -144,7 +144,7 @@ The cases and labels were written with AI help and reviewed, so the eval measure
 
 ## Out of scope
 
-Portuguese, a review UI for the queues, public hosting, account context data (needs Legal), real-time processing.
+Portuguese, a review UI for the queues, hosting beyond a few test users on this machine, per-user accounts, account context data (needs Legal), real-time processing.
 
 ## Files
 
