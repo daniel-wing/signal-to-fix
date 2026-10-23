@@ -461,6 +461,7 @@ $("analyzeBtn").onclick = async () => {
     r = await fetch("/api/upload", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: FILE.name, data})});
     body = await r.json();
   } catch (e) { body = {error: "Could not reach the analysis service."}; r = {ok: false}; }
+  if (r.status === 404) body.error = "The page server is an older version without uploads. Restart it: Ctrl+C in its terminal, then run the same command again.";
   if (!r.ok) { $("uploadState").innerHTML = `<span class="accent">${esc(body.error)}</span>`; $("analyzeBtn").disabled = false; return; }
   renderProgress({phase: "masking", done: 0, total: body.total});
   let lastKey = "";
