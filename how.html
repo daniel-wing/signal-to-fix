@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Signal-to-Fix works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0e10;
+  --fg:#ecebe8;
+  --body:#c9c7c2;
+  --muted:#8b9099;
+  --faint:#5a5f67;
+  --line:#23262b;
+  --band1:#26292e;
+  --band2:#33373d;
+  --accent:#e2b56c;
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--body); font: 400 15px/1.55 Inter, system-ui, sans-serif; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 48px 96px; }
+@media (max-width: 720px) { .wrap { padding: 0 16px 64px; } }
+.top { display: flex; justify-content: space-between; align-items: baseline; padding: 32px 0 8px; gap: 16px; flex-wrap: wrap; }
+.top h1 { margin: 0; font-size: 32px; font-weight: 600; color: var(--fg); letter-spacing: -0.02em; }
+.top .right { display: flex; gap: 24px; align-items: baseline; font-size: 13px; }
+.top .right a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--faint); }
+.top .right span { color: var(--muted); }
+.lede { margin: 0; max-width: 760px; font-size: 17px; }
+section { margin-top: 64px; }
+.eyebrow { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 8px; }
+h2 { margin: 0 0 24px; font-size: 22px; font-weight: 600; color: var(--fg); }
+.fg { color: var(--fg); }
+.accent { color: var(--accent); }
+svg { width: 100%; height: auto; display: block; }
+svg text { font-family: Inter, system-ui, sans-serif; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 48px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; }
+@media (max-width: 900px) { .grid4, .grid3 { grid-template-columns: 1fr; gap: 24px; } }
+.item .k { font-size: 17px; font-weight: 600; color: var(--fg); margin: 0 0 6px; }
+.item p { margin: 0; }
+.item .ex { margin-top: 8px; font-size: 13px; color: var(--muted); font-style: italic; }
+.steps { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+.steps li { display: grid; grid-template-columns: 48px 1fr; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); counter-increment: s; }
+.steps li::before { content: counter(s); font-size: 26px; font-weight: 600; color: var(--fg); line-height: 1.2; }
+.steps li b { color: var(--fg); font-weight: 600; display: block; }
+.diagram-wide { display: block; }
+@media (max-width: 720px) { .diagram-wide { display: none; } }
+.rule { border-left: 2px solid var(--accent); padding: 2px 0 2px 16px; margin: 0 0 16px; }
+.rule b { color: var(--fg); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>How Signal-to-Fix works</h1>
+    <div class="right"><a href="/">Back to the tool</a><span>Synthetic data only</span></div>
+  </div>
+  <p class="lede">Every day customers tell support what is not working. Signal-to-Fix reads a whole batch of those conversations at once and shows what the main problems are, why they happen, and which cases a person should look at. People then decide what to fix.</p>
+
+  <section>
+    <p class="eyebrow">The journey of a conversation</p>
+    <h2>From a pile of conversations to a clear picture</h2>
+    <div class="diagram-wide">
+    <svg viewBox="0 0 1200 560" role="img" aria-labelledby="dtitle">
+      <title id="dtitle">Conversations are uploaded and personal details are hidden on our computer. Only the hidden version goes to an AI service, which sorts each case. The results come back as a summary and people decide what to do.</title>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8b9099"/>
+        </marker>
+        <marker id="arrowA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#e2b56c"/>
+        </marker>
+      </defs>
+
+      <!-- Boundaries -->
+      <rect x="10" y="30" width="790" height="510" fill="none" stroke="#5a5f67" stroke-dasharray="6 6"/>
+      <text x="30" y="62" font-size="13" fill="#8b9099" letter-spacing="1.3">ON OUR OWN COMPUTER</text>
+      <rect x="860" y="30" width="330" height="290" fill="none" stroke="#5a5f67" stroke-dasharray="6 6"/>
+      <text x="880" y="62" font-size="13" fill="#8b9099" letter-spacing="1.3">AI SERVICE, OUTSIDE</text>
+
+      <!-- Step 1 -->
+      <text x="40" y="130" font-size="34" font-weight="600" fill="#ecebe8">1</text>
+      <text x="40" y="165" font-size="18" font-weight="600" fill="#ecebe8">Upload the conversations</text>
+      <text x="40" y="192" font-size="14" fill="#c9c7c2"><tspan x="40">A file with a batch of support</tspan><tspan x="40" dy="20">conversations.</tspan></text>
+
+      <!-- Step 2 -->
+      <text x="290" y="130" font-size="34" font-weight="600" fill="#ecebe8">2</text>
+      <text x="290" y="165" font-size="18" font-weight="600" fill="#ecebe8">Hide personal details</text>
+      <text x="290" y="192" font-size="14" fill="#c9c7c2"><tspan x="290">Names, phones, card and account</tspan><tspan x="290" dy="20">numbers become labels like</tspan><tspan x="290" dy="20" fill="#e2b56c">[NAME_1]</tspan></text>
+
+      <!-- Step 3 -->
+      <text x="550" y="130" font-size="34" font-weight="600" fill="#ecebe8">3</text>
+      <text x="550" y="165" font-size="18" font-weight="600" fill="#ecebe8">Safety check</text>
+      <text x="550" y="192" font-size="14" fill="#c9c7c2"><tspan x="550">If anything personal is left,</tspan><tspan x="550" dy="20">the case stops here and a</tspan><tspan x="550" dy="20">person takes it.</tspan></text>
+
+      <!-- Step 4 -->
+      <text x="890" y="130" font-size="34" font-weight="600" fill="#ecebe8">4</text>
+      <text x="890" y="165" font-size="18" font-weight="600" fill="#ecebe8">Sort each case</text>
+      <text x="890" y="192" font-size="14" fill="#c9c7c2"><tspan x="890">Reads only the hidden version.</tspan><tspan x="890" dy="20">Picks the customer's main pain</tspan><tspan x="890" dy="20">and where the cause sits:</tspan><tspan x="890" dy="20">People, Process, Policy or</tspan><tspan x="890" dy="20">Product.</tspan></text>
+
+      <!-- Step 5 -->
+      <text x="550" y="400" font-size="34" font-weight="600" fill="#ecebe8">5</text>
+      <text x="550" y="435" font-size="18" font-weight="600" fill="#ecebe8">Summary</text>
+      <text x="550" y="462" font-size="14" fill="#c9c7c2"><tspan x="550">Main pains, their causes,</tspan><tspan x="550" dy="20">customer quotes and the</tspan><tspan x="550" dy="20">cases to look at.</tspan></text>
+
+      <!-- Step 6 -->
+      <text x="40" y="400" font-size="34" font-weight="600" fill="#ecebe8">6</text>
+      <text x="40" y="435" font-size="18" font-weight="600" fill="#ecebe8">People decide</text>
+      <text x="40" y="462" font-size="14" fill="#c9c7c2"><tspan x="40">The team reads the summary,</tspan><tspan x="40" dy="20">adds what they know and writes</tspan><tspan x="40" dy="20">the recommendation.</tspan></text>
+
+      <!-- Arrows -->
+      <line x1="250" y1="122" x2="280" y2="122" stroke="#8b9099" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="510" y1="122" x2="540" y2="122" stroke="#8b9099" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="770" y1="122" x2="880" y2="122" stroke="#e2b56c" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="784" y="108" font-size="12" fill="#e2b56c">only the</text>
+      <text x="784" y="146" font-size="12" fill="#e2b56c">hidden version</text>
+      <path d="M1000 300 L1000 392 L770 392" fill="none" stroke="#8b9099" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="830" y="382" font-size="12" fill="#8b9099">category and cause</text>
+      <line x1="540" y1="392" x2="270" y2="392" stroke="#8b9099" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <!-- Step 3 side exit to a person -->
+      <path d="M640 262 L640 320" fill="none" stroke="#e2b56c" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrowA)"/>
+      <text x="560" y="342" font-size="12" fill="#e2b56c">stopped: a person takes it</text>
+    </svg>
+    </div>
+    <ol class="steps" style="margin-top:32px">
+      <li><div><b>Upload the conversations.</b>A file with a batch of support conversations, for example the last month.</div></li>
+      <li><div><b>Hide personal details, on our own computer.</b>Names, emails, phone numbers, card and account numbers, tax IDs and amounts are replaced by labels like [NAME_1]. The real values never leave.</div></li>
+      <li><div><b>Safety check.</b>If anything personal is still visible, that conversation is stopped and a person handles it. Nothing is sent.</div></li>
+      <li><div><b>Sort each case.</b>An AI service reads only the hidden version. It picks the customer's main pain from a fixed list and scores where the cause sits: People, Process, Policy or Product.</div></li>
+      <li><div><b>Summary.</b>The main pains, the cause behind each one, real customer quotes, and the cases a person should look at.</div></li>
+      <li><div><b>People decide.</b>The team reads the summary, adds what they know from their own work, and writes the recommendation. The tool does not decide.</div></li>
+    </ol>
+  </section>
+
+  <section>
+    <p class="eyebrow">Where the cause sits</p>
+    <h2>The 4Ps</h2>
+    <div class="grid4">
+      <div class="item"><p class="k">People</p><p>How the person who helped the customer handled it.</p><p class="ex">The agent gave the wrong steps, so the customer came back.</p></div>
+      <div class="item"><p class="k">Process</p><p>The steps and handoffs behind the scenes.</p><p class="ex">The case waited for another team to act.</p></div>
+      <div class="item"><p class="k">Policy</p><p>A rule or a limit.</p><p class="ex">A spending limit the cardholder could not see.</p></div>
+      <div class="item"><p class="k">Product</p><p>The app or the platform.</p><p class="ex">The app kept showing "pending" without saying why.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Safety rules</p>
+    <h2>What always happens</h2>
+    <p class="rule"><b>Personal details never leave our computer.</b> Only the hidden version is sent, and a final check stops anything that slipped through.</p>
+    <p class="rule"><b>Sensitive cases always go to a person.</b> Fraud, charges the customer does not recognize, locked accounts and legal threats.</p>
+    <p class="rule"><b>The AI cannot invent categories.</b> It picks from a fixed list. Anything new is marked Emerging for a person to name.</p>
+    <p class="rule"><b>People make the decisions.</b> The tool gives faster answers and the evidence. The recommendation is written by the team.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Honest limits</p>
+    <h2>What it does not do yet</h2>
+    <div class="grid3">
+      <div class="item"><p class="k">Tested on made-up cases</p><p>60 realistic but invented conversations. Real conversations need a careful test first.</p></div>
+      <div class="item"><p class="k">Causes are a starting point</p><p>The main pain is right about 98% of the time in the test. The cause matches the reviewed label a little over half the time, so people check it.</p></div>
+      <div class="item"><p class="k">Spanish only for now</p><p>Portuguese for Brazil is a next step.</p></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

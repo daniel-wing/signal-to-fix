@@ -3,10 +3,12 @@
   python3 run.py check            config, Ollama, model access, one tiny model call
   python3 run.py                  run every case in cases_raw.json, save results/latest.json
   python3 run.py --only C001      run one case and print every stage
-  python3 run.py serve            open the page at http://localhost:8000
+  python3 run.py serve            the page at http://localhost:8000 (upload a case file there)
+  python3 run.py serve --port N   same, on another port
 """
 import json
 import os
+import re
 import sys
 from datetime import datetime
 
@@ -61,6 +63,28 @@ def load_cases(cfg):
     return cases.get("cases", []) if isinstance(cases, dict) else cases
 
 
+def raw_spans(raw, mapping):
+    """Where each masked value sits in the raw text: [[start, end, type], ...] for highlighting."""
+    targets = []
+    for tok, value in mapping.items():
+        label = tok.strip("[]").rsplit("_", 1)[0]
+        targets.append((value, label))
+        if label == "NAME":  # first names or surnames alone get the same token
+            targets += [(part, label) for part in value.split() if len(part) >= 3]
+    spans = []
+    for value, label in targets:
+        for m in re.finditer(r"(?<!\w)" + re.escape(value) + r"(?!\w)", raw, re.IGNORECASE):
+            spans.append([m.start(), m.end(), label])
+    spans.sort(key=lambda x: (x[0], -(x[1] - x[0])))
+    merged = []
+    for sp in spans:
+        if merged and sp[0] < merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], sp[1])
+        else:
+            merged.append(sp)
+    return merged
+
+
 def mask_step(cfg, case_id, raw, meta=None):
     """Stage 1-2: mask locally and run the leak check. Nothing leaves the machine here."""
     rec = {"id": case_id, "meta": meta or {}, "raw": raw, "masked": None, "masked_tokens": [],
@@ -70,6 +94,7 @@ def mask_step(cfg, case_id, raw, meta=None):
         masked, mapping = mask(cfg, raw)
         rec["masked"] = masked
         rec["masked_tokens"] = sorted(mapping)  # token names only; values stay in vault.json
+        rec["raw_spans"] = raw_spans(raw, mapping)
         save_vault(cfg, case_id, mapping)
         leaks = leak_check(masked, mapping)
         if leaks:
@@ -121,31 +146,76 @@ def show(rec):
     print()
 
 
+def case_list(data):
+    """Accept a list of cases or {"cases": [...]}; each needs text or conversation."""
+    cases = data.get("cases", []) if isinstance(data, dict) else data
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("The file has no cases. Expected a list of cases.")
+    out = []
+    for i, case in enumerate(cases, 1):
+        if not isinstance(case, dict):
+            raise ValueError(f"Case {i} is not an object.")
+        text = case_text(case).strip()
+        if not text:
+            raise ValueError(f"Case {i} has no text or conversation.")
+        cid = str(case.get("id") or case.get("case_id") or f"R{i:03d}")
+        meta = {k: v for k, v in case.items() if k not in ("conversation", "text")}
+        out.append((cid, text, meta))
+    return out
+
+
+def analyze(cfg, cases, progress=None):
+    """Bulk run: mask every case locally, then classify the masked ones in parallel.
+
+    cases: list of (id, text, meta). progress(phase, done, total, records) is called as work completes.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    n = len(cases)
+    records = [None] * n
+    for phase, workers, fn in (
+            ("masking", 2, lambda i: mask_step(cfg, *cases[i])),
+            ("classifying", cfg["llm"].get("parallel_requests", 4), lambda i: classify_step(cfg, records[i]))):
+        done = 0
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(fn, i): i for i in range(n)}
+            for fut in as_completed(futures):
+                records[futures[fut]] = fut.result()
+                done += 1
+                if progress:
+                    progress(phase, done, n, records)
+    return records
+
+
+def save_results(cfg, records, source):
+    out = path(cfg, "results")
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(json.dumps({"run_at": datetime.now().isoformat(timespec="seconds"), "source": source,
+                               "model": cfg["llm"]["model"], "records": records},
+                              ensure_ascii=False, indent=2), encoding="utf-8")
+    return out
+
+
 def run_all(cfg, only=None):
-    cases = load_cases(cfg)
+    cases = case_list(load_cases(cfg))
     if only:
-        cases = [c for c in cases if (c.get("id") or c.get("case_id")) == only]
+        cases = [c for c in cases if c[0] == only]
         if not cases:
             sys.exit(f"No case {only} in {cfg['paths']['cases']}")
-    records = []
-    for i, case in enumerate(cases, 1):
-        cid = case.get("id") or case.get("case_id")
-        meta = {k: v for k, v in case.items() if k not in ("conversation", "text")}
-        rec = process(cfg, cid, case_text(case), meta)
-        records.append(rec)
-        if only:
-            show(rec)
-        else:
-            c = rec["classification"]
-            reason = c["contact_reason"] if c else "-"
-            print(f"[{i}/{len(cases)}] {cid}: {reason:24s} {rec['route']['route']:12s} {rec['route']['why']}")
-    if not only:
-        out = path(cfg, "results")
-        out.parent.mkdir(exist_ok=True)
-        out.write_text(json.dumps({"run_at": datetime.now().isoformat(timespec="seconds"),
-                                   "model": cfg["llm"]["model"], "records": records},
-                                  ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"\nSaved {len(records)} results to {out.relative_to(out.parent.parent)}")
+        rec = process(cfg, *cases[0])
+        show(rec)
+        return [rec]
+
+    def progress(phase, done, total, records):
+        print(f"\r{phase}: {done}/{total}   ", end="", flush=True)
+        if phase == "classifying" and done == total:
+            print()
+    records = analyze(cfg, cases, progress)
+    for rec in records:
+        c = rec["classification"]
+        reason = c["contact_reason"] if c else "-"
+        print(f"{rec['id']}: {reason:24s} {rec['route']['route']:12s} {rec['route']['why']}")
+    out = save_results(cfg, records, cfg["paths"]["cases"])
+    print(f"\nSaved {len(records)} results to {out.relative_to(out.parent.parent)}")
     return records
 
 
@@ -165,13 +235,26 @@ def page_state():
     return state
 
 
-def serve():
+def serve(port=None):
     import webbrowser
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
     from itertools import count
 
-    live_ids = count(1)
-    pending = {}  # live cases masked but not yet classified, by id
+    import threading
+    jobs = {}
+    job_ids = count(1)
+
+    def run_job(job, cases):
+        cfg = load_config()  # fresh: live edits to config.yaml and prompt.txt apply to each upload
+
+        def progress(phase, done, total, records):
+            job.update(phase=phase, done=done, total=total, records=records)
+        try:
+            records = analyze(cfg, cases, progress)
+            save_results(cfg, records, job["name"])
+            job.update(phase="done", records=records)
+        except Exception as e:
+            job.update(phase="failed", error=f"{type(e).__name__}: {e}")
 
     class Handler(BaseHTTPRequestHandler):
         def send(self, code, body, ctype="application/json"):
@@ -183,36 +266,43 @@ def serve():
             self.wfile.write(data)
 
         def do_GET(self):
-            route_path = self.path.split("?")[0]
+            route_path, _, query = self.path.partition("?")
             if route_path in ("/", "/index.html"):
                 self.send(200, (ROOT / "app.html").read_bytes(), "text/html")
+            elif route_path == "/how":
+                self.send(200, (ROOT / "how.html").read_bytes(), "text/html")
             elif route_path == "/api/state":
                 self.send(200, page_state())
+            elif route_path == "/api/job":
+                job = jobs.get(query.removeprefix("id="))
+                if not job:
+                    return self.send(404, {"error": "Unknown analysis."})
+                self.send(200, {k: v for k, v in job.items()})
             else:
                 self.send(404, {"error": "not found"})
 
         def do_POST(self):
-            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
-            if self.path == "/api/mask":
-                text = str(body.get("text", "")).strip()
-                if not text:
-                    return self.send(400, {"error": "Paste a conversation first."})
-                meta = {k: str(body[k]) for k in ("market", "channel") if body.get(k)}
-                rec = mask_step(load_config(), f"LIVE-{next(live_ids)}", text, meta)
-                pending[rec["id"]] = rec
-                return self.send(200, rec)
-            if self.path == "/api/classify":
-                rec = pending.pop(str(body.get("id", "")), None)
-                if not rec:
-                    return self.send(404, {"error": "Unknown case. Run it again."})
-                return self.send(200, classify_step(load_config(), rec))
-            self.send(404, {"error": "not found"})
+            if self.path != "/api/upload":
+                return self.send(404, {"error": "not found"})
+            if any(j["phase"] in ("masking", "classifying", "starting") for j in jobs.values()):
+                return self.send(409, {"error": "An analysis is already running. Wait for it to finish."})
+            try:
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+                cases = case_list(body.get("data"))
+            except (ValueError, json.JSONDecodeError) as e:
+                return self.send(400, {"error": str(e)})
+            jid = str(next(job_ids))
+            job = {"id": jid, "name": str(body.get("name") or "uploaded file"), "phase": "starting",
+                   "done": 0, "total": len(cases), "records": [], "error": None}
+            jobs[jid] = job
+            threading.Thread(target=run_job, args=(job, cases), daemon=True).start()
+            self.send(200, {"id": jid, "total": len(cases)})
 
         def log_message(self, fmt, *args):
             pass
 
     cfg = load_config()
-    host, port = cfg["server"]["host"], cfg["server"]["port"]
+    host, port = cfg["server"]["host"], port or cfg["server"]["port"]
     url = f"http://localhost:{port}"
     print(f"Serving {url}  (Ctrl+C to stop)")
     if os.environ.get("DISPLAY") or sys.platform == "darwin":
@@ -230,7 +320,7 @@ def main(argv):
     if argv[:1] == ["check"]:
         sys.exit(0 if check() else 1)
     if argv[:1] == ["serve"]:
-        serve()
+        serve(int(argv[2]) if argv[1:2] == ["--port"] else None)
         return
     if argv and argv[0] not in ("--only",):
         print(__doc__)

@@ -21,18 +21,20 @@
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 * { box-sizing: border-box; }
-html { color-scheme: dark; }
+html { color-scheme: dark; scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--body); font: 400 15px/1.55 Inter, system-ui, sans-serif;
        font-variant-numeric: tabular-nums; }
 .wrap { max-width: 1280px; margin: 0 auto; padding: 0 48px 96px; }
 @media (max-width: 720px) { .wrap { padding: 0 16px 64px; } }
+a { color: var(--fg); }
 
-/* Top of page */
-.top { display: flex; justify-content: space-between; align-items: baseline; padding: 32px 0 8px; gap: 16px; }
+/* Top */
+.top { display: flex; justify-content: space-between; align-items: baseline; padding: 32px 0 8px; gap: 16px; flex-wrap: wrap; }
 .top h1 { margin: 0; font-size: 32px; font-weight: 600; color: var(--fg); letter-spacing: -0.02em; }
-.top .synthetic { font-size: 13px; color: var(--muted); }
-.lede { margin: 0; max-width: 760px; }
-.cfg { margin: 8px 0 0; font-size: 13px; color: var(--faint); }
+.top .right { display: flex; gap: 24px; align-items: baseline; font-size: 13px; }
+.top .right a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--faint); }
+.top .synthetic { color: var(--muted); }
+.lede { margin: 0; max-width: 780px; }
 nav { margin: 24px 0 0; display: flex; gap: 24px; flex-wrap: wrap; }
 nav a { color: var(--muted); text-decoration: none; font-size: 13px; }
 nav a:hover { color: var(--fg); }
@@ -40,138 +42,191 @@ nav a:hover { color: var(--fg); }
 /* Sections */
 section { margin-top: 64px; }
 .eyebrow { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 8px; }
-h2 { margin: 0 0 24px; font-size: 22px; font-weight: 600; color: var(--fg); }
+h2 { margin: 0 0 16px; font-size: 22px; font-weight: 600; color: var(--fg); max-width: 900px; }
 h3 { margin: 0 0 12px; font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+h3 .aside { text-transform: none; letter-spacing: 0; color: var(--faint); }
+h4 { margin: 0 0 8px; font-size: 17px; font-weight: 600; color: var(--fg); }
 .note { font-size: 13px; color: var(--muted); margin: 0; }
 .faint { color: var(--faint); }
 .fg { color: var(--fg); }
 .accent { color: var(--accent); }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
-.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 48px; }
-@media (max-width: 900px) { .grid2, .grid3 { grid-template-columns: 1fr; gap: 32px; } .stats { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
+.stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; gap: 32px; } .stats, .stats.three { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
 .block { margin-top: 48px; }
+.hidden { display: none; }
 .fade { animation: fade 250ms ease-out; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
-/* Inputs and buttons */
-textarea, select { background: var(--band1); color: var(--body); border: none; border-radius: 3px; font: inherit; }
-textarea { width: 100%; min-height: 150px; padding: 12px 16px; font: 13px/1.6 var(--mono); resize: vertical; }
-select { padding: 10px 12px; font-size: 14px; }
-textarea:focus, select:focus, button:focus-visible { outline: 1px solid var(--accent); outline-offset: 0; }
-textarea::placeholder { color: var(--faint); }
-.controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
-.controls label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
-button { font: 500 14px Inter, system-ui, sans-serif; border-radius: 3px; padding: 12px 20px; cursor: pointer; }
-button.primary { background: var(--fg); color: var(--bg); border: none; }
-button:disabled { opacity: 0.5; cursor: default; }
-.status { font-size: 13px; color: var(--muted); }
+/* Explanation list */
+ol.how { margin: 0; padding: 0 0 0 20px; max-width: 900px; }
+ol.how li { margin: 0 0 8px; }
+ol.how li::marker { color: var(--faint); }
 
-/* Three-pane case view */
-.panes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.pane { padding: 0 24px; border-left: 1px solid var(--line); }
-.pane:first-child { padding-left: 0; border-left: none; }
-.pane pre { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1.6 var(--mono); color: var(--body); }
-.pane .note { margin: -6px 0 12px; }
-.tok { color: var(--accent); }
-@media (max-width: 900px) { .panes { grid-template-columns: 1fr; } .pane { padding: 24px 0 0; border-left: none; border-top: 1px solid var(--line); margin-top: 24px; } .pane:first-child { border-top: none; margin-top: 0; padding-top: 0; } }
-.state { margin: 24px 0 0; font-size: 14px; }
-
-/* Key-value list */
-.kv { display: grid; grid-template-columns: max-content 1fr; margin: 0; }
-.kv dt, .kv dd { padding: 8px 0; border-bottom: 1px solid var(--line); margin: 0; }
-.kv dt { color: var(--muted); font-size: 13px; padding-right: 24px; }
-.kv dd { color: var(--body); overflow-wrap: anywhere; }
-.kv dd b { color: var(--fg); font-weight: 500; }
-
-/* Bars */
-.bar { display: grid; grid-template-columns: 72px 1fr 40px; gap: 12px; align-items: center; }
-.bar .name { color: var(--fg); font-size: 14px; }
-.bar .track { background: var(--band1); height: 8px; }
-.bar .fill { background: var(--band2); height: 8px; }
-.bar .fill.lead { background: var(--accent); }
-.bar .val { color: var(--fg); text-align: right; font-size: 14px; }
-.quote { margin: 4px 0 16px 84px; font-size: 13px; color: var(--muted); font-style: italic; }
-.prow { margin-bottom: 4px; }
-.prow + .prow { margin-top: 12px; }
-
-/* Route label */
-.route { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; }
-.r-auto_tag { color: var(--muted); }
-.r-review_queue, .r-emerging { color: var(--fg); }
-.r-human_led, .r-blocked { color: var(--accent); }
-ul.owners { list-style: none; padding: 0; margin: 12px 0 0; }
-ul.owners li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+/* Upload */
+.upload { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+input[type=file] { display: none; }
+button, .btn { font: 500 14px Inter, system-ui, sans-serif; border-radius: 3px; padding: 12px 20px; cursor: pointer;
+               background: transparent; color: var(--fg); border: none; box-shadow: inset 0 0 0 1px var(--faint); }
+button.primary { background: var(--fg); color: var(--bg); box-shadow: none; }
+button:disabled { opacity: 0.4; cursor: default; }
+button:focus-visible, .btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.filename { font-size: 14px; color: var(--fg); }
+.progress { margin-top: 24px; max-width: 900px; }
+.progress .row { display: grid; grid-template-columns: 24px 240px 1fr 100px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.progress .row .n { color: var(--faint); }
+.progress .row .track { background: var(--band1); height: 8px; }
+.progress .row .fill { background: var(--band2); height: 8px; transition: width 250ms; }
+.progress .row.active .fill { background: var(--accent); }
+.progress .row .val { text-align: right; color: var(--muted); }
+@media (max-width: 720px) { .progress .row { grid-template-columns: 20px 1fr 80px; } .progress .row .track { display: none; } }
 
 /* Stats */
 .stat .num { font-size: 44px; font-weight: 600; color: var(--fg); letter-spacing: -0.03em; line-height: 1.1; }
 .stat .num.key { color: var(--accent); }
-.stat .num.text { font-size: 22px; line-height: 1.6; }
-.stat .lbl { font-size: 13px; color: var(--muted); margin-top: 4px; max-width: 220px; }
-
-/* Alerts */
-.alert { border-left: 2px solid var(--accent); padding: 4px 0 4px 16px; color: var(--accent); margin: 0 0 12px; }
+.stat .num.text { font-size: 26px; line-height: 1.5; letter-spacing: -0.01em; }
+.stat .lbl { font-size: 13px; color: var(--muted); margin-top: 4px; max-width: 240px; }
 
 /* Tables */
+.tscroll { overflow: auto; }
+.tall { max-height: 680px; border-bottom: 1px solid var(--line); }
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
-th { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: left; padding: 0 12px 8px 0; border-bottom: 1px solid var(--line); }
-td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); color: var(--body); vertical-align: top; }
-td:first-child { color: var(--fg); }
+th { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: left;
+     padding: 0 16px 8px 0; border-bottom: 1px solid var(--line); background: var(--bg); position: sticky; top: 0; z-index: 1; }
+th .aside { text-transform: none; letter-spacing: 0; color: var(--faint); }
+td { padding: 10px 16px 10px 0; border-bottom: 1px solid var(--line); color: var(--body); vertical-align: top; }
+td:first-child { color: var(--fg); white-space: nowrap; }
 th.num, td.num { text-align: right; }
-td.barcell { width: 30%; }
-td.barcell .track { background: var(--band1); height: 8px; margin-top: 7px; }
-td.barcell .fill { background: var(--band2); height: 8px; }
-.tscroll { overflow-x: auto; }
+td.text { font: 13px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; min-width: 320px; width: 47%; }
+mark { background: none; color: var(--accent); border-bottom: 1px solid var(--accent); }
+.tok { color: var(--accent); }
 tr.click { cursor: pointer; }
 tr.click:hover td { color: var(--fg); }
+tr.detail td { color: var(--muted); font-size: 13px; padding-top: 0; }
+tr.detail td p { margin: 0 0 6px; }
+.p4 { display: grid; grid-template-columns: repeat(4, 58px); gap: 8px; text-align: right; }
+.p4 .lead { color: var(--accent); }
+.route { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+.r-auto_tag { color: var(--muted); }
+.r-review_queue, .r-emerging { color: var(--fg); }
+.r-human_led, .r-blocked { color: var(--accent); }
+
+/* Charts */
+.hbar { display: grid; grid-template-columns: 200px 1fr 80px; gap: 12px; align-items: center; padding: 6px 0; }
+.hbar .name { color: var(--fg); font-size: 14px; }
+.hbar .fill { background: var(--band2); height: 8px; border-radius: 0 4px 4px 0; }
+.hbar .fill.lead { background: var(--accent); }
+.hbar .val { text-align: right; font-size: 14px; color: var(--fg); }
+.hbar .val span { color: var(--muted); }
+@media (max-width: 720px) { .hbar { grid-template-columns: 1fr 70px; } .hbar .track { grid-column: 1 / -1; order: 3; } }
+table.matrix th, table.matrix td { position: static; }
+table.matrix td.cell { min-width: 110px; }
+.cellbar { display: grid; grid-template-columns: 1fr 40px; gap: 8px; align-items: center; }
+.ctrack { background: var(--band1); height: 8px; }
+.cfill { background: var(--band2); height: 8px; }
+.cfill.lead { background: var(--accent); }
+.cval { text-align: right; color: var(--fg); }
+.cval.lead { color: var(--accent); }
+
+/* Category write-ups */
+.cat { padding: 24px 0; border-bottom: 1px solid var(--line); }
+.cat:first-child { padding-top: 0; }
+.cat .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 12px; font-size: 14px; }
+.cat .facts .k { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px; }
+.cat blockquote { margin: 12px 0 0; padding: 0 0 0 16px; border-left: 1px solid var(--faint); font-size: 14px; font-style: italic; }
+.cat blockquote cite { display: block; font-style: normal; font-size: 12px; color: var(--faint); margin-top: 2px; }
+@media (max-width: 900px) { .cat .facts { grid-template-columns: 1fr; } }
+
+.alert { border-left: 2px solid var(--accent); padding: 4px 0 4px 16px; color: var(--accent); margin: 0 0 12px; }
+.state { margin: 16px 0 0; font-size: 14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
     <h1>Signal-to-Fix</h1>
-    <span class="synthetic">Synthetic data only</span>
+    <div class="right"><a href="/how">How it works</a><span class="synthetic">Synthetic data only</span></div>
   </div>
-  <p class="lede">Turns support conversations into contact reasons, root causes and specific cases to review. People make the decisions and the VOC proposal; this gives them faster answers and the evidence behind them.</p>
-  <p class="cfg" id="cfgline">Loading settings.</p>
+  <p class="lede">Upload a file of support conversations. Signal-to-Fix protects personal data, sorts every case into a customer pain category and its root cause, and summarizes what customers are telling us. People read the results and write the recommendation.</p>
   <nav>
-    <a href="#try">Try it</a><a href="#case">Case detail</a><a href="#summary">Summary</a><a href="#evaluation">Evaluation</a>
+    <a href="#upload">Upload</a><a href="#step1">1. Protect personal data</a><a href="#step2">2. Sort each case</a><a href="#step3">3. What customers are telling us</a><a href="#trust">How far to trust it</a>
   </nav>
 
-  <section id="try">
-    <p class="eyebrow">Try it</p>
-    <h2>Run one conversation</h2>
-    <textarea id="input" placeholder="Paste one support conversation in Spanish.&#10;Cliente: Hola, activé mi tarjeta y sigue en pendiente..."></textarea>
-    <div class="controls">
-      <label for="market">Market</label>
-      <select id="market"><option value="">Not set</option><option>MX</option><option>BR</option><option>CO</option></select>
-      <label for="channel">Channel</label>
-      <select id="channel"><option value="">Not set</option><option>chat</option><option>whatsapp</option><option>call</option><option>email</option></select>
-      <button class="primary" id="runBtn">Run</button>
-      <span class="status" id="status"></span>
+  <section id="upload">
+    <p class="eyebrow">Start</p>
+    <h2>Upload a file of support conversations</h2>
+    <p class="note">A JSON file with a list of cases. Each case needs a <span class="fg">text</span> field; <span class="fg">id</span>, <span class="fg">market</span>, <span class="fg">channel</span> and <span class="fg">date</span> are used when present.</p>
+    <div class="upload">
+      <label class="btn" for="file">Choose file</label>
+      <input type="file" id="file" accept=".json,application/json">
+      <span class="filename" id="filename">No file chosen</span>
+      <button class="primary" id="analyzeBtn" disabled>Analyze</button>
+      <button id="lastBtn" class="hidden">Show the last analysis</button>
     </div>
-    <div class="controls">
-      <label for="savedSel">Or open a saved case</label>
-      <select id="savedSel"><option value="">No saved run</option></select>
+    <p class="state" id="uploadState"></p>
+    <div class="progress hidden" id="progress"></div>
+  </section>
+
+  <section id="step1" class="hidden">
+    <p class="eyebrow">Step 1</p>
+    <h2>Protect personal data before anything leaves this computer</h2>
+    <div class="grid2">
+      <ol class="how">
+        <li><span class="fg">Patterns</span> find data with a known shape: emails, phone numbers, card numbers and card endings, account numbers, tax IDs (RFC, NIT, CPF, CNPJ) and amounts.</li>
+        <li><span class="fg">A small AI model running on this computer</span> finds names and addresses, which have no fixed shape.</li>
+        <li>Each item is replaced by a label such as <span class="tok">[NAME_1]</span>. The real values stay in a local file.</li>
+        <li><span class="fg">A final check</span> looks for anything left. If it finds something, that case is not sent and goes to a person.</li>
+      </ol>
+      <div id="maskStats"></div>
+    </div>
+    <div class="block">
+      <h3>Before and after, every case <span class="aside">(highlighted: what was found and hidden)</span></h3>
+      <div class="tscroll tall"><table id="maskTable"></table></div>
     </div>
   </section>
 
-  <section id="case">
-    <p class="eyebrow">Case detail</p>
-    <h2 id="caseTitle">No case open</h2>
-    <div id="caseBody"><p class="note">Run a conversation or open a saved case.</p></div>
+  <section id="step2" class="hidden">
+    <p class="eyebrow">Step 2</p>
+    <h2>Sort each case into a customer pain category and a root cause</h2>
+    <div class="grid2">
+      <ol class="how">
+        <li>An AI model reads <span class="fg">only the protected text</span> from step 1.</li>
+        <li>It picks one <span class="fg">customer pain category</span> from a fixed list. It cannot invent new ones: anything new is marked <span class="fg">Emerging</span> for a person to name.</li>
+        <li>It scores the <span class="fg">root cause</span> across the 4Ps, shown here as shares of 100%: People (how the agent handled it), Process (internal steps and handoffs), Policy (rules and limits), Product (the app or platform).</li>
+        <li>Sensitive cases (fraud, locked accounts, legal) and unsure answers go to a person. The rules live in a settings file that can be changed during the session.</li>
+      </ol>
+      <div>
+        <h3>The fixed list of categories</h3>
+        <p id="catList" class="note"></p>
+        <h3 style="margin-top:24px">Next step for each case</h3>
+        <p class="note"><span class="route r-auto_tag">Auto-tag</span> confident, counted as is.<br><span class="route r-review_queue">Review</span> a person checks the label.<br><span class="route r-emerging">Emerging</span> a person names a new category.<br><span class="route r-human_led">Human-led</span> a person handles it.</p>
+      </div>
+    </div>
+    <div class="block">
+      <h3>Every case <span class="aside">(click a row to see why)</span></h3>
+      <div class="tscroll tall"><table id="classTable"></table></div>
+    </div>
   </section>
 
-  <section id="summary">
-    <p class="eyebrow">Summary</p>
-    <h2>What the saved run shows</h2>
-    <div id="summaryBody"><p class="note">No saved run yet. Run <code>python3 run.py</code>.</p></div>
+  <section id="step3" class="hidden">
+    <p class="eyebrow">Step 3</p>
+    <h2>What these customers are telling us</h2>
+    <p class="note" id="sourceLine" style="margin:-4px 0 32px"></p>
+    <div class="stats" id="topStats"></div>
+    <div class="block hidden" id="alerts"></div>
+    <div class="block"><h3>Customer pain categories</h3><div id="catChart" style="max-width:900px"></div></div>
+    <div class="block"><h3>Root cause by category <span class="aside">(average share of the 4Ps; the largest in each row is highlighted)</span></h3><div class="tscroll" id="matrix"></div></div>
+    <div class="block">
+      <h3>Category by category</h3>
+      <div id="catDetail"></div>
+    </div>
   </section>
 
-  <section id="evaluation">
-    <p class="eyebrow">Evaluation</p>
-    <h2>How far to trust it</h2>
-    <div id="evalBody"><p class="note">Not measured. Run <code>python3 run_eval.py</code>.</p></div>
+  <section id="trust">
+    <p class="eyebrow">How far to trust it</p>
+    <h2>Tested on 60 labeled cases</h2>
+    <div id="evalBody"><p class="note">Not measured.</p></div>
   </section>
 </div>
 <script>
@@ -179,236 +234,286 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const hiTok = s => esc(s).replace(/\[[A-Z0-9_]+_\d+\]/g, m => `<span class="tok">${m}</span>`);
 const pct = x => Math.round(x * 100) + "%";
-const REASON = {card_activation: "Card activation", payment_declined: "Payment declined",
+const CATS = ["card_activation", "payment_declined", "invoice_reconciliation", "account_access", "how_to_policy", "other"];
+const CAT = {card_activation: "Card activation", payment_declined: "Payment declined",
   invoice_reconciliation: "Invoice reconciliation", account_access: "Account access",
-  how_to_policy: "How-to and policy", other: "Other", unknown: "Unknown", not_classified: "Not classified"};
-const reason = k => REASON[k] || k;
+  how_to_policy: "How-to and policy", other: "Other", unknown: "Emerging (new)", not_classified: "Not classified"};
+const cat = k => CAT[k] || k;
 const words = k => k ? k.replace(/_/g, " ") : "";
+const PS = ["people", "process", "policy", "product"];
 const PNAME = {people: "People", process: "Process", policy: "Policy", product: "Product"};
 const ROUTE = {auto_tag: "Auto-tag", review_queue: "Review", emerging: "Emerging", human_led: "Human-led", blocked: "Blocked"};
-const routeKey = rec => rec.mask_problem ? "blocked" : rec.route.route;
-const routeLabel = k => `<span class="route r-${k}">${ROUTE[k]}</span>`;
-let STATE = null;
+const TYPE = {NAME: "Names", EMAIL: "Emails", PHONE: "Phone numbers", CARD: "Card numbers", CARD_LAST4: "Card endings",
+  ACCOUNT: "Account numbers", AMOUNT: "Amounts", ADDRESS: "Addresses", RFC: "Tax IDs (RFC)", NIT: "Tax IDs (NIT)",
+  CPF: "Tax IDs (CPF)", CNPJ: "Tax IDs (CNPJ)", ID: "Other ID numbers"};
+let CURRENT = [], POLL = null, FILE = null;
 
-function topP(c) { return Object.entries(c.four_p).sort((a, b) => b[1].score - a[1].score)[0][0]; }
+const reasonOf = r => r.classification ? r.classification.contact_reason : "not_classified";
+const routeKey = r => r.mask_problem ? "blocked" : (r.route ? r.route.route : null);
+const routeLabel = k => k ? `<span class="route r-${k}">${ROUTE[k]}</span>` : '<span class="faint">Waiting</span>';
+function shares(c) {
+  const tot = PS.reduce((a, p) => a + c.four_p[p].score, 0);
+  return tot ? Object.fromEntries(PS.map(p => [p, c.four_p[p].score / tot])) : null;
+}
+const topP = sh => PS.reduce((a, p) => sh[p] > sh[a] ? p : a, PS[0]);
 
-function fadeIn(el) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); }
-
-function renderPanes(rec) {
-  const blocked = rec.mask_problem;
-  let state = "";
-  if (blocked) {
-    state = `<p class="state accent">Blocked: personal data detected after masking. Nothing was sent. (${esc(blocked)})</p>`;
-  } else {
-    state = `<p class="state">Leak check passed. <span class="faint">Masked: ${esc(rec.masked_tokens.join(", ") || "nothing found")}</span></p>`;
+/* ---------- Step 1: before and after ---------- */
+function highlight(raw, spans) {
+  let out = "", at = 0;
+  for (const [a, b, label] of spans || []) {
+    out += esc(raw.slice(at, a)) + `<mark title="${esc(TYPE[label] || label)}">${esc(raw.slice(a, b))}</mark>`;
+    at = b;
   }
-  return `<div class="panes">
-      <div class="pane"><h3>Raw</h3><p class="note faint">Never leaves this machine.</p><pre>${esc(rec.raw)}</pre></div>
-      <div class="pane"><h3>Masked</h3><pre>${rec.masked ? hiTok(rec.masked) : '<span class="accent">Masking failed.</span>'}</pre></div>
-      <div class="pane"><h3>Sent to model</h3><pre>${rec.sent ? hiTok(rec.sent) : '<span class="faint">' + (blocked ? "Nothing was sent." : "Not sent yet.") + '</span>'}</pre></div>
-    </div>${state}`;
+  return out + esc(raw.slice(at));
 }
 
-function renderCase(rec, phase) {
-  const m = rec.meta || {};
-  const where = [m.market, m.channel, m.date].filter(Boolean).join(", ");
-  $("caseTitle").textContent = `Case ${rec.id}` + (where ? ` (${where})` : "");
-  let html = renderPanes(rec);
+function renderStep1(records) {
+  const done = records.filter(r => r && "masked" in r);
+  $("step1").classList.remove("hidden");
+  const types = {};
+  let items = 0, blocked = 0;
+  for (const r of done) {
+    for (const t of r.masked_tokens || []) { const l = t.slice(1, -1).replace(/_\d+$/, ""); types[l] = (types[l] || 0) + 1; items++; }
+    if (r.mask_problem) blocked++;
+  }
+  const typeRows = Object.entries(types).sort((a, b) => b[1] - a[1]);
+  $("maskStats").innerHTML = `<div class="stats three">
+      <div class="stat"><div class="num">${items}</div><div class="lbl">Personal data items hidden in ${done.length} cases</div></div>
+      <div class="stat"><div class="num${blocked ? " key" : ""}">${blocked}</div><div class="lbl">Cases stopped by the final check</div></div>
+      <div class="stat"><div class="num">0</div><div class="lbl">Personal data items sent to the AI model</div></div>
+    </div>
+    <div class="tscroll block"><table><tr><th>Type of data</th><th class="num">Hidden</th></tr>${typeRows.map(([l, n]) => `<tr><td>${esc(TYPE[l] || l)}</td><td class="num">${n}</td></tr>`).join("")}</table></div>`;
+  $("maskTable").innerHTML = `<tr><th>Case</th><th>Original <span class="aside">(never leaves this computer)</span></th><th>Sent for analysis</th></tr>`
+    + done.map(r => `<tr><td>${esc(r.id)}</td>
+        <td class="text">${highlight(r.raw, r.raw_spans)}</td>
+        <td class="text">${r.mask_problem ? `<span class="accent">Stopped: ${esc(r.mask_problem)}. Nothing was sent.</span>` : hiTok(r.masked)}</td></tr>`).join("");
+}
+
+/* ---------- Step 2: sort each case ---------- */
+function renderStep2(records) {
+  $("step2").classList.remove("hidden");
+  $("catList").innerHTML = CATS.map(k => `<span class="fg">${cat(k)}</span>`).join(", ") + ". A case that fits none of them is marked Emerging instead of being forced into a category.";
+  $("classTable").innerHTML = `<tr><th>Case</th><th>Market</th><th>Channel</th><th>Customer pain category</th>
+      <th><div class="p4"><span>People</span><span>Process</span><span>Policy</span><span>Product</span></div></th><th class="num">Confidence</th><th>Next step</th></tr>`
+    + records.map((r, i) => {
+      if (!r) return "";
+      const c = r.classification, m = r.meta || {};
+      const sh = c && shares(c), lead = sh && topP(sh);
+      const p4 = sh ? `<div class="p4">${PS.map(p => `<span class="${p === lead ? "lead" : ""}">${pct(sh[p])}</span>`).join("")}</div>`
+                    : `<span class="faint">${r.route ? "No clear cause" : "Waiting"}</span>`;
+      const catCell = c ? `<span class="fg">${esc(cat(c.contact_reason))}</span>${c.sub_reason ? `<br><span class="note">${esc(words(c.sub_reason))}</span>` : ""}`
+                        : (r.route ? '<span class="accent">Not classified</span>' : '<span class="faint">Waiting</span>');
+      return `<tr class="click" data-i="${i}"><td>${esc(r.id)}</td><td>${esc(m.market || "")}</td><td>${esc(m.channel || "")}</td>
+        <td>${catCell}</td><td>${p4}</td><td class="num">${c ? c.confidence.toFixed(2) : ""}</td><td>${routeLabel(routeKey(r))}</td></tr>`;
+    }).join("");
+}
+
+function toggleDetail(tr, rec) {
+  const next = tr.nextElementSibling;
+  if (next && next.classList.contains("detail")) { next.remove(); return; }
   const c = rec.classification;
-  if (phase === "classifying") {
-    html += `<p class="state status">Classifying...</p>`;
-  } else if (!c && !rec.mask_problem) {
-    html += `<p class="state accent">Classification unavailable. Nothing auto-tagged.</p>`
-         + (rec.error ? `<p class="note faint">${esc(rec.error)}</p>` : "");
-  }
-  if (c) {
-    const exp = m.expected_reason;
-    html += `<div class="grid2 block">
-      <div><h3>Contact reason</h3><dl class="kv">
-        <dt>Reason</dt><dd><b>${esc(reason(c.contact_reason))}</b>${c.sub_reason ? ", " + esc(words(c.sub_reason)) : ""}</dd>
-        ${exp ? `<dt>Label in case file</dt><dd>${esc(reason(exp))}${exp === c.contact_reason ? "" : ' <span class="accent">differs</span>'}</dd>` : ""}
-        <dt>Could also be</dt><dd>${c.ambiguous_with ? esc(reason(c.ambiguous_with)) : '<span class="faint">None</span>'}</dd>
-        <dt>Confidence</dt><dd>${c.confidence.toFixed(2)} <span class="faint">self-reported by the model</span></dd>
-        <dt>Product defect</dt><dd>${c.is_defect ? "Yes" : "No"}</dd>
-        <dt>Repeat contact</dt><dd>${c.is_repeat ? "Yes" : "No"}</dd>
-        <dt>Why</dt><dd>${esc(c.rationale)}</dd>
-        <dt>Model</dt><dd class="faint">${esc(rec.model)}, ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"}</dd>
-      </dl></div>
-      <div><h3>Root cause</h3>${renderFourP(c)}</div>
-    </div>`;
-  }
-  if (rec.route) {
-    const k = routeKey(rec);
-    html += `<div class="block"><h3>Route</h3><p>${routeLabel(k)} &nbsp;<span>${esc(rec.route.why)}</span></p>`;
-    if (rec.route.owners.length) {
-      html += `<h3 style="margin-top:24px">Proposed owners <span class="faint" style="text-transform:none;letter-spacing:0">(a person confirms)</span></h3><ul class="owners">`
-        + rec.route.owners.map(o => `<li><span class="fg">${esc(o.owner)}</span> <span class="faint">${PNAME[o.p]} ${o.score.toFixed(2)}</span></li>`).join("") + "</ul>";
-    }
-    html += "</div>";
-  }
-  $("caseBody").innerHTML = html;
-  fadeIn($("caseBody"));
+  let html = `<p><span class="fg">Why:</span> ${esc(c ? c.rationale : rec.error || rec.mask_problem || "Not classified yet.")}</p>`;
+  if (rec.route) html += `<p><span class="fg">Next step:</span> ${esc(rec.route.why)}${rec.route.owners.length ? ". Proposed owner: " + rec.route.owners.map(o => esc(o.owner)).join("; ") + " (a person confirms)" : ""}</p>`;
+  if (c) for (const p of PS) if (c.four_p[p].quote) html += `<p><span class="fg">${PNAME[p]}:</span> <em>"${esc(c.four_p[p].quote)}"</em></p>`;
+  if (c) html += `<p>Repeat contact: ${c.is_repeat ? "yes" : "no"}. Product defect: ${c.is_defect ? "yes" : "no"}.</p>`;
+  tr.insertAdjacentHTML("afterend", `<tr class="detail"><td></td><td colspan="6">${html}</td></tr>`);
 }
 
-function renderFourP(c) {
-  const top = topP(c);
-  return ["people", "process", "policy", "product"].map(p => {
-    const v = c.four_p[p];
-    return `<div class="prow"><div class="bar"><span class="name">${PNAME[p]}</span><div class="track"><div class="fill${p === top ? " lead" : ""}" style="width:${pct(v.score)}"></div></div><span class="val">${v.score.toFixed(2)}</span></div>`
-      + (v.quote ? `<p class="quote">"${esc(v.quote)}"</p>` : "") + "</div>";
+/* ---------- Step 3: what customers are telling us ---------- */
+function renderStep3(res, alerts) {
+  const recs = res.records.filter(Boolean);
+  $("step3").classList.remove("hidden");
+  $("sourceLine").textContent = `${res.source ? "From " + res.source + ", " : ""}analyzed ${res.run_at.replace("T", " ").slice(0, 16)}, ${recs.length} cases.`;
+
+  const groups = {};
+  for (const r of recs) (groups[reasonOf(r)] = groups[reasonOf(r)] || []).push(r);
+  const order = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+  const n = recs.length;
+  const person = recs.filter(r => routeKey(r) !== "auto_tag").length;
+  const repeats = recs.filter(r => r.classification && r.classification.is_repeat).length;
+  const top = order[0];
+  $("topStats").innerHTML = `
+    <div class="stat"><div class="num">${n}</div><div class="lbl">Cases analyzed</div></div>
+    <div class="stat"><div class="num key">${pct(groups[top].length / n)}</div><div class="lbl">${esc(cat(top))}, the largest customer pain category (${groups[top].length} cases)</div></div>
+    <div class="stat"><div class="num">${pct(repeats / n)}</div><div class="lbl">Repeat contacts: the first contact did not solve it (${repeats} cases)</div></div>
+    <div class="stat"><div class="num">${pct(person / n)}</div><div class="lbl">Need a person: review, emerging or human-led (${person} cases)</div></div>`;
+
+  let al = "";
+  if (alerts && !alerts.error) {
+    for (const r of alerts.rows.filter(x => x.alert)) {
+      const ratio = r.ratio === null ? "new in these days" : `${r.ratio.toFixed(1)}× its usual share`;
+      const days = alerts.recent_window.replace(/\s*\(.*\)$/, "");
+      al += `<p class="alert">${esc(cat(r.reason))}: ${r.recent} cases in the last days of the file (${esc(days)}), ${ratio}.</p>`;
+    }
+    if (alerts.risk && alerts.risk.alert) al += `<p class="alert">Sensitive cases (fraud, locked accounts, legal): ${alerts.risk.recent} in the same days, all sent to a person.</p>`;
+  }
+  $("alerts").innerHTML = al ? `<h3>Spike alert</h3>${al}` : "";
+  $("alerts").classList.toggle("hidden", !al);
+
+  const max = groups[top].length;
+  $("catChart").innerHTML = order.map((k, i) => {
+    const c = groups[k].length;
+    return `<div class="hbar" title="${esc(cat(k))}: ${c} cases, ${pct(c / n)}"><span class="name">${esc(cat(k))}</span>
+      <div class="track"><div class="fill${i === 0 ? " lead" : ""}" style="width:${(c / max) * 100}%"></div></div>
+      <span class="val">${c} <span>${pct(c / n)}</span></span></div>`;
+  }).join("");
+
+  const avg = {};
+  for (const k of order) {
+    const shs = groups[k].map(r => r.classification && shares(r.classification)).filter(Boolean);
+    avg[k] = shs.length ? Object.fromEntries(PS.map(p => [p, shs.reduce((a, s) => a + s[p], 0) / shs.length])) : null;
+  }
+  $("matrix").innerHTML = `<table class="matrix"><tr><th>Category</th>${PS.map(p => `<th>${PNAME[p]}</th>`).join("")}</tr>`
+    + order.map(k => {
+      const a = avg[k];
+      if (!a) return `<tr><td>${esc(cat(k))}</td><td colspan="4" class="faint">No clear cause</td></tr>`;
+      const lead = topP(a);
+      return `<tr><td>${esc(cat(k))} <span class="faint">${groups[k].length}</span></td>` + PS.map(p =>
+        `<td class="cell" title="${esc(cat(k))}, ${PNAME[p]}: ${pct(a[p])}"><div class="cellbar"><div class="ctrack"><div class="cfill${p === lead ? " lead" : ""}" style="width:${pct(a[p])}"></div></div><span class="cval${p === lead ? " lead" : ""}">${pct(a[p])}</span></div></td>`).join("") + "</tr>";
+    }).join("") + "</table>";
+
+  $("catDetail").innerHTML = order.map(k => {
+    const rs = groups[k], a = avg[k];
+    let causes = '<span class="faint">No clear cause</span>';
+    if (a) {
+      const ranked = PS.slice().sort((x, y) => a[y] - a[x]);
+      causes = `<span class="fg">${PNAME[ranked[0]]} ${pct(a[ranked[0]])}</span>, then ${PNAME[ranked[1]]} ${pct(a[ranked[1]])}`;
+    }
+    const subs = {}, markets = {};
+    let rep = 0, def = 0;
+    for (const r of rs) {
+      const c = r.classification;
+      if (c && c.sub_reason) subs[c.sub_reason] = (subs[c.sub_reason] || 0) + 1;
+      const mk = (r.meta && r.meta.market) || "Not set"; markets[mk] = (markets[mk] || 0) + 1;
+      if (c && c.is_repeat) rep++;
+      if (c && c.is_defect) def++;
+    }
+    const list = o => Object.entries(o).sort((x, y) => y[1] - x[1]).map(([x, c]) => `${esc(words(x))} ${c}`).join(", ");
+    // In their words: evidence quotes, preferring what the customer said over what the agent said
+    const customerSaid = (r, q) => (r.masked || "").split("\n").some(l => /^cliente:/i.test(l) && l.includes(q));
+    const quotes = rs.filter(r => r.classification)
+      .flatMap(r => PS.filter(p => r.classification.four_p[p].quote).map(p => ({id: r.id, p, q: r.classification.four_p[p].quote,
+        cust: customerSaid(r, r.classification.four_p[p].quote), w: r.classification.four_p[p].score})))
+      .sort((x, y) => (y.cust - x.cust) || (y.w - x.w))
+      .filter((q, i, all) => all.findIndex(o => o.id === q.id) === i)  // one quote per case
+      .slice(0, 2);
+    return `<div class="cat"><h4>${esc(cat(k))} <span class="note">${rs.length} cases, ${pct(rs.length / n)}</span></h4>
+      <div class="facts">
+        <div><span class="k">Main root cause</span>${causes}</div>
+        <div><span class="k">Detail</span>${list(subs) || '<span class="faint">None</span>'}</div>
+        <div><span class="k">Markets</span>${list(markets)}</div>
+      </div>
+      <div class="facts">
+        <div><span class="k">Repeat contacts</span>${rep} of ${rs.length}</div>
+        <div><span class="k">Product defects flagged</span>${def} of ${rs.length}</div>
+        <div><span class="k">Need a person</span>${rs.filter(r => routeKey(r) !== "auto_tag").length} of ${rs.length}</div>
+      </div>
+      ${quotes.length ? `<span class="k" style="display:block;margin-top:16px;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">In their words</span>` : ""}
+      ${quotes.map(q => `<blockquote>"${esc(q.q)}"<cite>${esc(q.id)}, ${q.cust ? "customer" : "agent"}, points to ${PNAME[q.p]}</cite></blockquote>`).join("")}
+    </div>`;
   }).join("");
 }
 
-function showCase(rec) {
-  renderCase(rec, "done");
-  location.hash = "case";
-}
-
-function shareTable(title, counts, total, label) {
-  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  return `<div><h3>${title}</h3><div class="tscroll"><table><tr><th>${label}</th><th class="num">Cases</th><th class="num">Share</th><th></th></tr>`
-    + rows.map(([k, n]) => `<tr><td>${esc(k)}</td><td class="num">${n}</td><td class="num">${pct(n / total)}</td><td class="barcell"><div class="track"><div class="fill" style="width:${pct(n / total)}"></div></div></td></tr>`).join("")
-    + "</table></div>";
-}
-
-function caseTable(title, recs) {
-  if (!recs.length) return `<div><h3>${title}</h3><p class="note">None.</p></div>`;
-  return `<div><h3>${title} (${recs.length})</h3><div class="tscroll"><table><tr><th>Case</th><th>Reason</th><th>Why</th></tr>` + recs.map(r =>
-    `<tr class="click" data-id="${esc(r.id)}"><td>${esc(r.id)}</td><td>${esc(reason(r.classification ? r.classification.contact_reason : "not_classified"))}</td><td>${esc(r.route.why)}</td></tr>`).join("") + "</table></div></div>";
-}
-
-function renderSummary(s) {
-  const res = s.results;
-  if (!res) return;
-  const recs = res.records;
-  const byRoute = {}, byReason = {}, byP = {}, byMarket = {};
-  for (const r of recs) {
-    const k = routeKey(r); byRoute[k] = (byRoute[k] || 0) + 1;
-    const rr = reason(r.classification ? r.classification.contact_reason : "not_classified");
-    byReason[rr] = (byReason[rr] || 0) + 1;
-    if (r.classification) { const p = PNAME[topP(r.classification)]; byP[p] = (byP[p] || 0) + 1; }
-    const mk = (r.meta && r.meta.market) || "Not set"; byMarket[mk] = (byMarket[mk] || 0) + 1;
-  }
-  const nP = Object.values(byP).reduce((a, b) => a + b, 0) || 1;
-  const when = res.run_at.replace("T", " ").slice(0, 16);
-  let html = `<p class="note" style="margin:-12px 0 32px">Saved run from ${esc(when)}, ${recs.length} cases.</p>`;
-
-  html += `<div class="stats">` + ["auto_tag", "review_queue", "emerging", "human_led"].map(k =>
-    `<div class="stat"><div class="num${k === "human_led" && byRoute[k] ? " key" : ""}">${byRoute[k] || 0}</div><div class="lbl">${{auto_tag: "Auto-tagged", review_queue: "In the review queue", emerging: "Emerging, a person names them", human_led: "Human-led"}[k]}</div></div>`).join("") + "</div>";
-  if (byRoute.blocked) html += `<p class="state accent">${byRoute.blocked} blocked by the leak check. Nothing was sent for them.</p>`;
-
-  const a = s.alerts;
-  html += `<div class="block"><h3>Spike check</h3>`;
-  if (!a || a.error) {
-    html += `<p class="note">${esc(a ? a.error : "Not measured.")}</p>`;
-  } else {
-    const days = s.config.alerts.recent_days;
-    const alerts = a.rows.filter(r => r.alert);
-    for (const r of alerts) {
-      const inWindow = recs.filter(x => (x.classification ? x.classification.contact_reason : "not_classified") === r.reason && x.meta.date && x.meta.date >= a.recent_window.slice(0, 10));
-      const allHuman = inWindow.length && inWindow.every(x => x.route.route === "human_led");
-      const ratio = r.ratio === null ? "new this window" : `${r.ratio.toFixed(1)}× baseline share`;
-      html += `<p class="alert">${esc(reason(r.reason))}: ${r.recent} cases in the last ${days} days, ${ratio}.${allHuman ? " Sent to a human." : " Review the cases."}</p>`;
-    }
-    const k = a.risk;
-    if (k.alert) html += `<p class="alert">Risk words: ${k.recent} cases in the last ${days} days vs ${k.baseline} in the ${s.config.alerts.baseline_days} days before. All sent to a human.</p>`;
-    if (!alerts.length && !k.alert) html += `<p class="note">No spike. Rule: ${esc(a.rule)}.</p>`;
-    html += `<p class="note" style="margin-bottom:16px">Last ${days} days (${esc(a.recent_window)}) compared with the ${s.config.alerts.baseline_days} days before (${esc(a.baseline_window)}). Alert when the ${esc(a.rule)}.</p>`;
-    html += `<div class="tscroll"><table><tr><th>Contact reason</th><th class="num">Last ${days} days</th><th class="num">Share</th><th class="num">Before</th><th class="num">Share</th><th class="num">Ratio</th></tr>`
-      + a.rows.map(r => `<tr><td>${esc(reason(r.reason))}</td><td class="num">${r.recent}</td><td class="num">${pct(r.recent_share)}</td><td class="num">${r.baseline}</td><td class="num">${pct(r.baseline_share)}</td><td class="num${r.alert ? " accent" : ""}">${r.ratio === null ? "New" : r.ratio.toFixed(1) + "×"}</td></tr>`).join("")
-      + "</table></div>";
-  }
-  html += "</div>";
-
-  html += `<div class="grid3 block">${shareTable("By contact reason", byReason, recs.length, "Reason")}${shareTable("By root cause (top P)", byP, nP, "P")}${shareTable("By market", byMarket, recs.length, "Market")}</div>`;
-  html += `<div class="grid3 block">${caseTable("Review", recs.filter(r => r.route.route === "review_queue"))}${caseTable("Emerging", recs.filter(r => r.route.route === "emerging"))}${caseTable("Human-led", recs.filter(r => r.route.route === "human_led"))}</div>`;
-  $("summaryBody").innerHTML = html;
-}
-
+/* ---------- Trust ---------- */
 function renderEval(e) {
   if (!e) return;
-  const leak = e.pii_in_sent.length, risk = e.risk_not_human_led.length;
   const tp = e.top_p_agreement;
-  $("evalBody").innerHTML = `<p class="note" style="margin:-12px 0 32px">Eval run ${esc(e.run_at.replace("_", " "))}, real model, ${e.labeled} labeled cases.</p>
-    <div class="stats">
-      <div class="stat"><div class="num">${pct(e.accuracy)}</div><div class="lbl">Contact reason matches the label (${e.correct} of ${e.labeled}). Gate ${pct(e.accuracy_gate)}.</div></div>
-      <div class="stat"><div class="num${leak ? " key" : ""}">${leak}</div><div class="lbl">Personal data found in what was sent. Must be 0.</div></div>
-      <div class="stat"><div class="num${risk ? " key" : ""}">${risk}</div><div class="lbl">Risk cases not sent to a human. Must be 0.</div></div>
-      <div class="stat"><div class="num">${e.activation_decline_confusions.length}</div><div class="lbl">Activation vs decline confusions.</div></div>
+  $("evalBody").innerHTML = `<div class="stats">
+      <div class="stat"><div class="num">${pct(e.accuracy)}</div><div class="lbl">Customer pain category matches the reviewed label (${e.correct} of ${e.labeled}). Target ${pct(e.accuracy_gate)}.</div></div>
+      <div class="stat"><div class="num">${e.pii_in_sent.length}</div><div class="lbl">Personal data items found in what was sent. Must be 0.</div></div>
+      <div class="stat"><div class="num">${e.risk_not_human_led.length}</div><div class="lbl">Sensitive cases not sent to a person. Must be 0.</div></div>
+      <div class="stat"><div class="num">${tp == null ? '<span class="text">Not measured</span>' : pct(tp)}</div><div class="lbl">Main root cause matches the label. Lower, so root causes are a starting point for people, not a verdict.</div></div>
     </div>
-    <div class="stats block">
-      <div class="stat"><div class="num">${tp === undefined || tp === null ? '<span class="text">Not measured</span>' : pct(tp)}</div><div class="lbl">Top P matches the label${tp === undefined || tp === null ? "" : ` (${e.top_p_matched} of ${e.top_p_labeled})`}. Tracked, not gated: owners are proposals.</div></div>
-      <div class="stat"><div class="num text">Not measured</div><div class="lbl">Agreement between two human reviewers. Needed before Gate 0 can pass.</div></div>
-    </div>
-    <p class="block">Gate 0 offline checks: <span class="fg">${e.passes ? "Pass" : '<span class="accent">Fail</span>'}</span>. <span class="note">The cases and labels were written with AI help, so this is agreement with reviewed labels, not real-world accuracy.</span></p>`;
+    <p class="note block">Agreement between two human reviewers: Not measured yet. The test cases and labels were written with AI help, so this is agreement with reviewed labels, not real-world accuracy. Last test ${esc(e.run_at.replace("_", " "))}.</p>`;
 }
 
-function render(s) {
-  STATE = s;
-  const rt = s.config.routing;
-  $("cfgline").textContent = `Model ${s.config.model}. Auto-tag at ${rt.auto_tag_min_confidence.toFixed(2)}, review from ${rt.review_min_confidence.toFixed(2)}, repeats to review ${rt.repeat_to_review ? "on" : "off"}, ${rt.risk_words.length} risk words. Read live from config.yaml.`;
-  const sel = $("savedSel");
-  if (s.results) {
-    const keep = sel.value;
-    sel.innerHTML = '<option value="">Choose a case</option>' + s.results.records.map(r =>
-      `<option value="${esc(r.id)}">${esc(r.id)}, ${esc(reason(r.classification ? r.classification.contact_reason : "not_classified"))}, ${ROUTE[routeKey(r)]}</option>`).join("");
-    sel.value = keep;
-  }
-  renderSummary(s);
-  renderEval(s.eval);
+/* ---------- Upload and progress ---------- */
+$("file").onchange = () => {
+  FILE = $("file").files[0] || null;
+  $("filename").textContent = FILE ? FILE.name : "No file chosen";
+  $("analyzeBtn").disabled = !FILE;
+  $("uploadState").textContent = "";
+};
+
+function renderProgress(job) {
+  const p = $("progress");
+  p.classList.remove("hidden");
+  const t = job.total || 0;
+  const maskDone = job.phase === "masking" ? job.done : (["classifying", "done"].includes(job.phase) ? t : 0);
+  const clsDone = job.phase === "classifying" ? job.done : (job.phase === "done" ? t : 0);
+  const row = (n, label, d, active, valText) => `<div class="row${active ? " active" : ""}"><span class="n">${n}</span><span class="${active ? "fg" : ""}">${label}</span>
+      <div class="track"><div class="fill" style="width:${t ? (d / t) * 100 : 0}%"></div></div><span class="val">${valText}</span></div>`;
+  p.innerHTML = row(1, "Protecting personal data", maskDone, job.phase === "masking", `${maskDone} of ${t}`)
+    + row(2, "Sorting each case", clsDone, job.phase === "classifying", `${clsDone} of ${t}`)
+    + row(3, "Summarizing", job.phase === "done" ? t : 0, false, job.phase === "done" ? "Done" : "Waiting");
 }
 
-async function load() {
+$("analyzeBtn").onclick = async () => {
+  if (!FILE) return;
+  let data;
+  try { data = JSON.parse(await FILE.text()); }
+  catch (e) { $("uploadState").innerHTML = '<span class="accent">This file is not valid JSON.</span>'; return; }
+  $("analyzeBtn").disabled = true;
+  $("uploadState").textContent = "";
+  ["step1", "step2", "step3"].forEach(id => $(id).classList.add("hidden"));
+  let r, body;
   try {
-    render(await (await fetch("/api/state")).json());
-    const want = new URLSearchParams(location.search).get("case");  // link straight to a case: /?case=C024
-    const rec = want && STATE.results && STATE.results.records.find(r => r.id === want);
-    if (rec) renderCase(rec, "done");
-  } catch (e) {
-    $("cfgline").innerHTML = '<span class="accent">Could not load the saved run.</span>';
-  }
-}
-
-async function post(url, body) {
-  const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error || r.status);
-  return data;
-}
-
-$("runBtn").onclick = async () => {
-  const text = $("input").value.trim();
-  if (!text) { $("status").textContent = "Paste a conversation first."; return; }
-  $("runBtn").disabled = true;
-  $("status").textContent = "Masking locally...";
-  try {
-    let rec = await post("/api/mask", {text, market: $("market").value, channel: $("channel").value});
-    renderCase(rec, rec.mask_problem ? "blocked" : "classifying");
-    location.hash = "case";
-    if (!rec.mask_problem) {
-      $("status").textContent = "Classifying...";
-      rec = await post("/api/classify", {id: rec.id});
-    } else {
-      rec = await post("/api/classify", {id: rec.id});  // routes it to a person; nothing is sent
+    r = await fetch("/api/upload", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: FILE.name, data})});
+    body = await r.json();
+  } catch (e) { body = {error: "Could not reach the analysis service."}; r = {ok: false}; }
+  if (!r.ok) { $("uploadState").innerHTML = `<span class="accent">${esc(body.error)}</span>`; $("analyzeBtn").disabled = false; return; }
+  renderProgress({phase: "masking", done: 0, total: body.total});
+  let lastKey = "";
+  POLL = setInterval(async () => {
+    let job;
+    try { job = await (await fetch("/api/job?id=" + body.id)).json(); } catch (e) { return; }
+    const key = job.phase + job.done;
+    if (key === lastKey) return;
+    lastKey = key;
+    renderProgress(job);
+    CURRENT = job.records || [];
+    if (["masking", "classifying", "done"].includes(job.phase)) renderStep1(CURRENT);
+    if (["classifying", "done"].includes(job.phase)) renderStep2(CURRENT);
+    if (job.phase === "done" || job.phase === "failed") {
+      clearInterval(POLL);
+      $("analyzeBtn").disabled = false;
+      if (job.phase === "failed") { $("uploadState").innerHTML = `<span class="accent">Analysis failed: ${esc(job.error)}</span>`; return; }
+      const state = await (await fetch("/api/state")).json();
+      renderStep3(state.results, state.alerts);
+      $("uploadState").textContent = "Done. The three steps are below.";
     }
-    renderCase(rec, "done");
-    $("status").textContent = "";
-    load();  // pick up config edits in the settings line
-  } catch (e) {
-    $("status").innerHTML = `<span class="accent">Run failed: ${esc(e.message)}</span>`;
-  } finally { $("runBtn").disabled = false; }
+  }, 1000);
 };
-$("savedSel").onchange = () => {
-  const rec = STATE && STATE.results && STATE.results.records.find(r => r.id === $("savedSel").value);
-  if (rec) showCase(rec);
+
+$("lastBtn").onclick = async () => {
+  const s = await (await fetch("/api/state")).json();
+  if (!s.results) return;
+  CURRENT = s.results.records;
+  renderStep1(CURRENT);
+  renderStep2(CURRENT);
+  renderStep3(s.results, s.alerts);
+  location.hash = "step1";
 };
+
 document.addEventListener("click", ev => {
-  const tr = ev.target.closest("tr.click");
-  if (!tr || !STATE || !STATE.results) return;
-  const rec = STATE.results.records.find(r => r.id === tr.dataset.id);
-  if (rec) showCase(rec);
+  const tr = ev.target.closest("#classTable tr.click");
+  if (tr && CURRENT[+tr.dataset.i]) toggleDetail(tr, CURRENT[+tr.dataset.i]);
 });
-load();
+
+(async () => {
+  try {
+    const s = await (await fetch("/api/state")).json();
+    renderEval(s.eval);
+    if (s.results) {
+      const when = s.results.run_at.replace("T", " ").slice(0, 16);
+      $("lastBtn").textContent = `Show the last analysis (${s.results.records.length} cases, ${when})`;
+      $("lastBtn").classList.remove("hidden");
+      if (new URLSearchParams(location.search).has("last")) $("lastBtn").click();  // /?last opens it directly
+    }
+  } catch (e) {
+    $("uploadState").innerHTML = '<span class="accent">Could not reach the analysis service.</span>';
+  }
+})();
 </script>
 </body>
 </html>

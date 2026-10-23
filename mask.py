@@ -6,6 +6,7 @@
 import json
 import re
 import sys
+import threading
 
 from common import load_config, normalize, ollama_generate, path
 
@@ -154,7 +155,15 @@ def leak_check(masked, mapping):
     return leaks
 
 
+_VAULT_LOCK = threading.Lock()
+
+
 def save_vault(cfg, case_id, mapping):
+    with _VAULT_LOCK:
+        _save_vault(cfg, case_id, mapping)
+
+
+def _save_vault(cfg, case_id, mapping):
     vault_file = path(cfg, "vault")
     vault = json.loads(vault_file.read_text(encoding="utf-8")) if vault_file.exists() else {}
     vault[case_id] = mapping

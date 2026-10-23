@@ -20,6 +20,7 @@ llm:
   effort: low                      # low | medium | high
   max_tokens: 4000
   timeout_seconds: 30              # normal calls take about 5s; offline fails safe after this
+  parallel_requests: 6             # cases classified at the same time on a bulk upload
 
 # Routing (A6: demo policy, not validated; confidence is self-reported by the model).
 routing:

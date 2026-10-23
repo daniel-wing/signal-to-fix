@@ -23,7 +23,13 @@ Trigger: a closed support conversation (from the case file, or pasted into the p
    Owner by the top P, plus any other P above 0.50: People = team lead coaching; Process = process owner; Policy = cost-benefit review; Product = bug draft if it is a defect, otherwise a user-story candidate for the PM weekly review.
 5. **Spike alert.** Per reason, the share of cases in the last 3 days vs the 27 days before. Alert at 2x or more with at least 3 cases. Risk cases are tracked separately.
 
-The page shows every step side by side: raw, masked, exactly what was sent, then the classification, 4P bars, route and owner.
+The page is a bulk analytics tool: upload a JSON file of cases and it shows three steps.
+
+1. **Protect personal data:** every case before and after, with what was hidden highlighted, and counts by type.
+2. **Sort each case:** customer pain category, the 4P shares (scores normalized to 100%), confidence and next step for every row.
+3. **What customers are telling us:** the main pain categories, the 4P breakdown per category, spike alerts, and per-category detail with customer quotes.
+
+A plain-language explanation for non-technical readers is at `/how`. A 60-case upload takes about 1 minute 45 seconds (masking about 1 minute, classification in parallel about 45 seconds). "Show the last analysis" opens the previous result instantly, and `/?last` opens it directly.
 
 ## Setup
 
@@ -57,12 +63,13 @@ Other commands:
 |---|---|
 | `python3 run.py` | Run every case, save `results/latest.json` |
 | `python3 run.py --only C001` | Run one case and print every stage |
+| `python3 run.py serve --port 8010` | The page on another port |
 | `python3 mask.py --all` | Masking only: planted PII still visible per case (target 0) |
 | `python3 alerts.py` | Spike alert table for the saved run |
 | `python3 run_eval.py` | Real-model evaluation, saved to `eval_runs/` |
 | `python3 run_eval.py --saved` | Score the saved run without calling the model |
 
-Open `http://localhost:8000/?case=C024` to jump straight to a case. Paste-ready demo cases are in `demo_cases.md`.
+On the page, upload `cases_raw.json` (or any file in the same shape). Paste-ready single cases for `run.py --only` style demos are in `demo_cases.md`. Open questions and later work are in `TODO.md`.
 
 ## Changing things live
 
@@ -140,7 +147,9 @@ Portuguese, a review UI for the queues, public hosting, account context data (ne
 | `run.py` | Setup check, pipeline, page server |
 | `run_eval.py` | Evaluation |
 | `common.py` | Config, `.env`, Ollama helpers |
-| `app.html` | The page |
+| `app.html` | The page (upload, steps 1 to 3, trust) |
+| `how.html` | How it works, in plain language |
+| `TODO.md` | Later work, including category governance |
 | `AI_RECORD.md` | What was delegated to AI and how it was checked |
 | `demo_cases.md` | Three paste-ready cases for the live demo |
 | `eval_runs/` | Every eval run, with the config and prompt used |
