@@ -93,7 +93,7 @@ def show(rec):
     print("--- 2. masked locally ---\n" + (rec["masked"] or "(masking failed)"))
     print(f"    tokens: {', '.join(rec['masked_tokens']) or 'none'}")
     print("--- 3. leak check ---\n" + (rec["mask_problem"] or "passed"))
-    print("--- 4. sent to the API ---\n" + (rec["sent"] or "(nothing sent)"))
+    print("--- 4. sent to the model ---\n" + (rec["sent"] or "(nothing sent)"))
     print("--- 5. classification ---")
     if c:
         print(f"reason: {c['contact_reason']} / {c['sub_reason']}  ambiguous_with: {c['ambiguous_with']}")
