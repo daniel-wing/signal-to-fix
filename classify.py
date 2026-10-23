@@ -27,14 +27,12 @@ def call_llm(cfg, system, user):
         raise ClassificationUnavailable("API key missing")
     client = anthropic.Anthropic(api_key=key, timeout=cfg["llm"]["timeout_seconds"], max_retries=1)
     try:
-        resp = client.beta.messages.create(
+        resp = client.messages.create(
             model=cfg["llm"]["model"],
             max_tokens=cfg["llm"]["max_tokens"],
             system=system,
             messages=[{"role": "user", "content": user}],
             output_config={"effort": cfg["llm"]["effort"]},
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
         )
     except anthropic.APIError as e:
         raise ClassificationUnavailable(type(e).__name__) from None
