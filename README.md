@@ -9,8 +9,8 @@ A small working prototype of one internal AI workflow for LumenPay (a synthetic 
 Trigger: a closed support conversation (from the case file, or pasted into the page).
 
 1. **Mask on this machine.** Regular expressions replace emails, phones, card numbers, "termina en 1234", account IDs, RFC, NIT, CPF, CNPJ and amounts. A small local model (`qwen2.5:3b` via Ollama) finds names and addresses; Python replaces them. Tokens look like `[NAME_1]`; the token map is kept in `vault.json`, which never leaves the machine.
-2. **Leak check.** Before any API call, the regular expressions run again and every original value from the token map is searched for. If anything remains, the call is blocked and the case goes to a human.
-3. **Classify.** Only the masked text goes to the cloud model (`claude-sonnet-5-5`). It returns a contact reason, sub-reason, possible ambiguity, a 4P root-cause score (People, Process, Policy, Product) with quotes, defect and repeat flags, a self-reported confidence and a one-sentence rationale. Invalid JSON gets one retry, then a human.
+2. **Leak check.** Before any call to the cloud model, the regular expressions run again and every original value from the token map is searched for. If anything remains, the call is blocked and the case goes to a human.
+3. **Classify.** Only the masked text goes to the cloud model (`claude-sonnet-5-5`), called through the Claude Code CLI installed on this machine (`claude -p` with our own system prompt, no tools, no settings, no saved session). The Anthropic API is a config switch away (`llm.backend: api`). It returns a contact reason, sub-reason, possible ambiguity, a 4P root-cause score (People, Process, Policy, Product) with quotes, defect and repeat flags, a self-reported confidence and a one-sentence rationale. Invalid JSON gets one retry, then a human.
 4. **Route** (in this order):
    1. Masking problem or a risk word (fraud, unrecognized charge, account takeover, lockout, legal): **human-led**.
    2. Reason unknown: **emerging** list, for a human to name. Never forced into "other".
@@ -25,16 +25,15 @@ The page shows every step side by side: raw, masked, exactly what was sent, then
 
 ## Setup
 
-Needs Python 3.10+, [Ollama](https://ollama.com) and an Anthropic API key.
+Needs Python 3.10+, [Ollama](https://ollama.com) and Claude Code logged in on this machine (or an Anthropic API key with `llm.backend: api`).
 
 ```bash
 git clone https://github.com/daniel-wing/signal-to-fix.git && cd signal-to-fix
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ollama pull qwen2.5:3b
-cp .env.example .env        # then put your key in .env
-# put cases_raw.json in this folder
-python3 run.py check        # config, Ollama, key present (yes/no), one tiny API call
+# only for llm.backend: api -> cp .env.example .env and put the key in .env
+python3 run.py check        # config, Ollama, model access, one tiny model call
 ```
 
 ## The one command
@@ -52,7 +51,9 @@ Other commands:
 | `python3 mask.py --all` | Masking only: planted PII still visible per case (target 0) |
 | `python3 alerts.py` | Spike alert table for the saved run |
 | `python3 run_eval.py` | Real-model evaluation, saved to `eval_runs/` |
-| `python3 run_eval.py --saved` | Score the saved run without calling the API |
+| `python3 run_eval.py --saved` | Score the saved run without calling the model |
+
+Open `http://localhost:8000/?case=C024` to jump straight to a case. Paste-ready demo cases are in `demo_cases.md`.
 
 ## Changing things live
 
@@ -63,14 +64,18 @@ Other commands:
 - **Prompt:** edit `prompt.txt`. The exact text sent is saved with each result and with each eval run.
 - **Alert rule:** `alerts` section (window lengths, ratio, minimum cases).
 - **Ollama on another machine:** `ollama.url`.
+- **Break the model call on purpose:** set `llm.cli: claude-broken`; the case shows "Classification unavailable. Nothing auto-tagged." and goes to a human.
+- **No network:** masking still runs locally; classification fails safe to a human; the saved run stays viewable on the page.
 
 ## Privacy claim
 
-Masking runs on this machine and the API call is blocked if detectable PII remains. Tested on synthetic cases only. Like any detector it can miss an unusual name or address, which is why production needs Gate 0 and a Legal review.
+Masking runs on this machine and the call to the cloud model is blocked if detectable PII remains. Tested on synthetic cases only. Like any detector it can miss an unusual name or address, which is why production needs Gate 0 and a Legal review.
 
 Notes: the evidence pack says classification and routing on pseudonymized fields are already approved; generative responses using card status, phone or transaction details are not, and this prototype does not generate any customer response. `vault.json`, `.env` and `results/` are git-ignored.
 
 ## Evaluation
+
+Latest result (eval run 2, 60 cases): reason accuracy 98% (59/60), 0 activation vs decline confusions, 0 PII in what was sent, 0 risk cases missed. The first run missed 4 lockout cases; see `AI_RECORD.md`. Masking and risk words were tuned on these same 60 cases, so these are in-sample numbers; a fresh held-out set is the next check.
 
 `run_eval.py` compares the model with the expected labels in the case file and reports reason accuracy, activation vs decline confusions, PII found in what was sent (must be 0) and risk cases not sent to a human (must be 0). Each run is saved as `eval_runs/<timestamp>.md` with the config and prompt used, and committed.
 
@@ -80,7 +85,7 @@ The cases and labels were written with AI help and reviewed, so the eval measure
 
 | # | Assumption |
 |---|---|
-| A1 | Classification model: Anthropic API, `claude-sonnet-5-5`. |
+| A1 | Classification model: `claude-sonnet-5-5` via the Claude Code CLI on a subscription login (demo only; production would use the API under approved processing terms). |
 | A2 | Masking model: `qwen2.5:3b` via Ollama, URL in config. |
 | A3 | Built and presented on one machine; a second machine is a backup, not rehearsed. |
 | A4 | Page in English, case text in Spanish. Brazil cases are in Spanish for this demo only; Portuguese is a next step. |
@@ -104,7 +109,8 @@ The cases and labels were written with AI help and reviewed, so the eval measure
 | Confident wrong label | Eval tracks it; shadow mode with double review before anything is auto-tagged. |
 | Activation vs decline confusion | Explicit rule in the prompt; ambiguity goes to the review queue; counted in every eval. |
 | Informal WhatsApp language | Not yet measured separately; add WhatsApp-heavy cases to the eval. |
-| API outage | "Classification unavailable. Nothing auto-tagged." Case goes to a human. |
+| Model or network outage | "Classification unavailable. Nothing auto-tagged." Case goes to a human. |
+| Risk phrased in a way the word list does not cover | Seen in eval run 1 (4 lockouts missed); word list extended; production needs a model-side risk flag as a second net. |
 | Drift after a product release | Spike alert per reason; re-run the eval after each release. |
 
 ## Out of scope
@@ -118,7 +124,7 @@ Portuguese, a review UI for the queues, public hosting, account context data (ne
 | `config.yaml` | Thresholds, risk words, alert rule, models, paths |
 | `prompt.txt` | Classification prompt |
 | `mask.py` | Local masking and leak check |
-| `classify.py` | API call, JSON validation, one retry |
+| `classify.py` | Model call (Claude Code CLI or API), JSON validation, one retry |
 | `route.py` | Routing rules and owners |
 | `alerts.py` | Spike alert |
 | `run.py` | Setup check, pipeline, page server |
@@ -126,3 +132,5 @@ Portuguese, a review UI for the queues, public hosting, account context data (ne
 | `common.py` | Config, `.env`, Ollama helpers |
 | `app.html` | The page |
 | `AI_RECORD.md` | What was delegated to AI and how it was checked |
+| `demo_cases.md` | Three paste-ready cases for the live demo |
+| `eval_runs/` | Every eval run, with the config and prompt used |
