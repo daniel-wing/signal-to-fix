@@ -262,6 +262,7 @@ def serve(port=None):
             self.send_response(code)
             self.send_header("Content-Type", ctype + "; charset=utf-8")
             self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")  # coming back to the page must show the live state
             self.end_headers()
             self.wfile.write(data)
 
@@ -272,7 +273,11 @@ def serve(port=None):
             elif route_path == "/how":
                 self.send(200, (ROOT / "how.html").read_bytes(), "text/html")
             elif route_path == "/api/state":
-                self.send(200, page_state())
+                state = page_state()
+                # a page opened mid-run (for example after visiting How it works) reconnects to it
+                running = [j for j in jobs.values() if j["phase"] in ("masking", "classifying", "starting")]
+                state["running"] = {"id": running[0]["id"], "total": running[0]["total"]} if running else None
+                self.send(200, state)
             elif route_path == "/api/job":
                 job = jobs.get(query.removeprefix("id="))
                 if not job:
