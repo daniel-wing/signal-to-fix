@@ -140,6 +140,11 @@ table.matrix td.cell { min-width: 110px; }
 
 .alert { border-left: 2px solid var(--accent); padding: 4px 0 4px 16px; color: var(--accent); margin: 0 0 12px; }
 .state { margin: 16px 0 0; font-size: 14px; }
+.ticker { margin-top: 20px; max-width: 900px; min-height: 52px; }
+.ticker p { margin: 0 0 6px; font-size: 14px; transition: opacity 250ms; }
+.ticker .now { color: var(--body); }
+.ticker .just { color: var(--muted); font-size: 13px; }
+.ticker .just b { color: var(--fg); font-weight: 500; }
 </style>
 </head>
 <body>
@@ -166,6 +171,7 @@ table.matrix td.cell { min-width: 110px; }
     </div>
     <p class="state" id="uploadState"></p>
     <div class="progress hidden" id="progress"></div>
+    <div class="ticker hidden" id="ticker"><p class="now" id="tickNow"></p><p class="just" id="tickJust"></p></div>
   </section>
 
   <section id="step1" class="hidden">
@@ -427,6 +433,89 @@ function renderEval(e) {
     <p class="note block">Agreement between two human reviewers: Not measured yet. The test cases and labels were written with AI help, so this is agreement with reviewed labels, not real-world accuracy. Last test ${esc(e.run_at.replace("_", " "))}.</p>`;
 }
 
+/* ---------- Commentary while it works ---------- */
+const TIPS = {
+  starting: ["Opening the file and counting the conversations."],
+  masking: [
+    "Reading each conversation on this computer. Nothing has left it yet.",
+    "Looking for anything with a known shape: emails, phone numbers, card endings, tax IDs.",
+    "A small AI model on this computer is looking for names. Names have no fixed shape, so patterns alone would miss them.",
+    "Swapping each personal detail for a label like [NAME_1]. The real values stay here.",
+    "Double-checking every case. If anything personal is still visible, that case stays behind.",
+  ],
+  classifying: [
+    "Sending only the protected text. The AI never sees a real name or number.",
+    "Six cases at a time, so this part goes faster.",
+    "Picking one customer pain category from a fixed list. No new categories get invented.",
+    "Working out where the cause sits: People, Process, Policy or Product.",
+    "Fraud, locked accounts and legal threats go straight to a person, whatever the AI says.",
+    "Not sure about a case? Then a person reviews it. Low confidence is never counted as is.",
+  ],
+};
+const ONE = {NAME: "a name", EMAIL: "an email", PHONE: "a phone number", CARD: "a card number", CARD_LAST4: "a card ending",
+  ACCOUNT: "an account number", AMOUNT: "an amount", ADDRESS: "an address", RFC: "a tax ID", NIT: "a tax ID", CPF: "a tax ID",
+  CNPJ: "a tax ID", ID: "an ID number"};
+let TICK = {phase: null, i: 0, timer: null, seenMask: new Set(), seenSort: new Set()};
+
+function sayNow(text) {
+  const el = $("tickNow");
+  el.style.opacity = 0;
+  setTimeout(() => { el.textContent = text; el.style.opacity = 1; }, 250);
+}
+
+function startTicker() {
+  clearInterval(TICK.timer);
+  TICK = {phase: null, i: 0, timer: null, seenMask: new Set(), seenSort: new Set()};
+  $("ticker").classList.remove("hidden");
+  $("tickNow").textContent = TIPS.starting[0];
+  $("tickJust").textContent = "";
+  TICK.timer = setInterval(() => {
+    const tips = TIPS[TICK.phase];
+    if (tips) sayNow(tips[TICK.i++ % tips.length]);
+  }, 4500);
+}
+
+function listItems(tokens) {
+  const items = [...new Set((tokens || []).map(t => ONE[t.slice(1, -1).replace(/_\d+$/, "")] || "a detail"))];
+  if (!items.length) return "nothing personal found";
+  return "hid " + (items.length === 1 ? items[0] : items.slice(0, -1).join(", ") + " and " + items[items.length - 1]);
+}
+
+function updateTicker(job) {
+  if (job.phase !== TICK.phase && TIPS[job.phase]) {  // new stage: say so right away
+    TICK.phase = job.phase; TICK.i = 1;
+    sayNow(TIPS[job.phase][0]);
+  }
+  const recs = (job.records || []).filter(Boolean);
+  if (job.phase === "masking") {
+    const fresh = recs.filter(r => "masked" in r && !TICK.seenMask.has(r.id));
+    fresh.forEach(r => TICK.seenMask.add(r.id));
+    const r = fresh[fresh.length - 1];
+    if (r) $("tickJust").innerHTML = r.mask_problem
+      ? `Just checked <b>${esc(r.id)}</b>: something personal was still visible, so it stays here and goes to a person.`
+      : `Just protected <b>${esc(r.id)}</b>: ${listItems(r.masked_tokens)}.`;
+  }
+  if (job.phase === "classifying") {
+    const fresh = recs.filter(r => r.route && !TICK.seenSort.has(r.id));
+    fresh.forEach(r => TICK.seenSort.add(r.id));
+    const r = fresh[fresh.length - 1];
+    if (r) {
+      const c = r.classification, sh = c && shares(c);
+      $("tickJust").innerHTML = !c
+        ? `Just checked <b>${esc(r.id)}</b>: no answer from the AI, so a person takes it. Nothing is counted as is.`
+        : c.contact_reason === "unknown"
+        ? `Just sorted <b>${esc(r.id)}</b>: something new that fits no category${sh ? ", mostly " + PNAME[topP(sh)] : ""}. A person will name it.`
+        : `Just sorted <b>${esc(r.id)}</b>: ${esc(cat(c.contact_reason).toLowerCase())}${sh ? ", mostly " + PNAME[topP(sh)] : ""}. Next step: ${ROUTE[routeKey(r)].toLowerCase()}.`
+        ;
+    }
+  }
+  if (job.phase === "done" || job.phase === "failed") {
+    clearInterval(TICK.timer);
+    sayNow(job.phase === "done" ? `All ${job.total} cases done. The three steps are below.` : "Something went wrong. The details are above.");
+    $("tickJust").textContent = "";
+  }
+}
+
 /* ---------- Upload and progress ---------- */
 $("file").onchange = () => {
   FILE = $("file").files[0] || null;
@@ -464,6 +553,7 @@ $("analyzeBtn").onclick = async () => {
   if (r.status === 404) body.error = "The page server is an older version without uploads. Restart it: Ctrl+C in its terminal, then run the same command again.";
   if (!r.ok) { $("uploadState").innerHTML = `<span class="accent">${esc(body.error)}</span>`; $("analyzeBtn").disabled = false; return; }
   renderProgress({phase: "masking", done: 0, total: body.total});
+  startTicker();
   let lastKey = "";
   POLL = setInterval(async () => {
     let job;
@@ -472,6 +562,7 @@ $("analyzeBtn").onclick = async () => {
     if (key === lastKey) return;
     lastKey = key;
     renderProgress(job);
+    updateTicker(job);
     CURRENT = job.records || [];
     if (["masking", "classifying", "done"].includes(job.phase)) renderStep1(CURRENT);
     if (["classifying", "done"].includes(job.phase)) renderStep2(CURRENT);
