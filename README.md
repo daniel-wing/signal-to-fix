@@ -44,6 +44,13 @@ python3 run.py check        # config, Ollama, model access, one tiny model call
 python3 run.py serve        # opens http://localhost:8000
 ```
 
+On a headless server (for example the zbook, reached by SSH from a laptop), run this on the laptop. It starts the page on the server and tunnels it; Ctrl+C stops both:
+
+```bash
+ssh -t -L 8000:localhost:8000 wing@zbook-server 'cd ~/projects/signal-to-fix && .venv/bin/python run.py serve'
+# then open http://localhost:8000 on the laptop
+```
+
 Other commands:
 
 | Command | What it does |
@@ -78,7 +85,7 @@ Notes: the evidence pack says classification and routing on pseudonymized fields
 
 ## Evaluation
 
-Latest result (eval run 4, 60 cases): reason accuracy 98% (59/60), 0 activation vs decline confusions, 0 PII in what was sent, 0 risk cases missed. Top P agreement 52% (31/60) is tracked but not gated: owners are proposals a person confirms. Human-human agreement is not measured yet. The first run missed 4 lockout cases; see `AI_RECORD.md`. Masking and risk words were tuned on these same 60 cases, so these are in-sample numbers; a fresh held-out set is the next check.
+Latest result (eval run 5, 60 cases): reason accuracy 98% (59/60), 0 activation vs decline confusions, 0 PII in what was sent, 0 risk cases missed. Top P agreement 57% (34/60) is tracked but not gated: owners are proposals a person confirms. Human-human agreement is not measured yet. The first run missed 4 lockout cases; see `AI_RECORD.md`. Masking and risk words were tuned on these same 60 cases, so these are in-sample numbers; a fresh held-out set is the next check.
 
 `run_eval.py` compares the model with the expected labels in the case file and reports reason accuracy, activation vs decline confusions, PII found in what was sent (must be 0) and risk cases not sent to a human (must be 0). Each run is saved as `eval_runs/<timestamp>.md` with the config and prompt used, and committed.
 

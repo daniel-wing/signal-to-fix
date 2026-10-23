@@ -40,6 +40,10 @@ NAME_HINT_RES = [
     # "Cliente: Larissa Duarte, [ACCOUNT_1]" (name given when the agent asks for it)
     re.compile(rf"^(?:Cliente|Agente):\s*({CAP}(?:\s+{CAP}){{1,3}})\s*,", re.MULTILINE),
 ]
+# Greeting or intro words a name cue can pick up in front of a name ("Hola Karla Mendoza").
+LEAD_WORDS = {"hola", "soy", "habla", "gracias", "buenas", "buenos", "oye", "oi", "ola", "me", "llamo"}
+# A capitalized phrase starting with these is a menu path or a sentence, not a name ("En Equipo").
+NOT_NAME_START = {"en", "el", "la", "los", "las", "de", "del", "por", "para", "con", "al", "un", "una"}
 NEVER_PII = {"lumenpay", "cliente", "agente", "soporte", "hola", "gracias"}
 
 LOCAL_PROMPT = """Eres un detector de datos personales. Lee la conversacion de soporte y devuelve SOLO un JSON:
@@ -108,7 +112,14 @@ class Masker:
         for addr in sorted(addresses, key=len, reverse=True):
             if len(addr) >= 6 and normalize(addr) in normalize(text):
                 text = self.replace_literal(text, "ADDRESS", addr)
-        for name in sorted(names, key=len, reverse=True):
+        cleaned = []
+        for name in names:
+            parts = name.split()
+            while parts and normalize(parts[0]) in LEAD_WORDS:
+                parts = parts[1:]
+            if parts and normalize(parts[0]) not in NOT_NAME_START:
+                cleaned.append(" ".join(parts))
+        for name in sorted(set(cleaned), key=len, reverse=True):
             name = name.strip()
             if len(name) < 3 or normalize(name) in NEVER_PII or normalize(name) not in normalize(text):
                 continue

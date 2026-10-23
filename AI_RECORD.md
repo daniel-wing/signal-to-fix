@@ -27,23 +27,24 @@ How AI was used to build and check this prototype. All data is synthetic.
 2. **Eval run 1 failed: 4 of 6 risk cases (account lockouts) were auto-tagged.** The risk words listed "cuenta bloqueada" but customers wrote "cuenta está bloqueada", "se bloqueó", "sigue bloqueada", "conta ta bloqueada". Matching was also by substring, so "robaron" fired inside "aprobaron" (right result, wrong reason). Fix: whole-word matching and the lockout phrasings in Spanish and WhatsApp Portuguese. Eval run 2: 0 missed.
 3. **Offline simulation found masking depended on proxy settings.** With the model call routed to a dead proxy, the local Ollama call went through the proxy too and masking failed (safely: human-led, nothing sent). Fix: Ollama calls never use a proxy. The model call then failed safe, but only after 90 seconds; the timeout is now 30.
 4. **A phone with a country code was masked as a card number** (`+55 21 98888-0177` became `+[CARD_1]`). Still masked, wrong label. Fix: a number after "+" is a phone.
-5. **Earlier, the classifier could fall back to a different model on a refusal.** Removed: a refusal now goes to a human like any other failure.
+5. **Names swallowed greetings, and one menu path was masked as a name.** "Hola Karla Mendoza" became one `[NAME_1]` in 11 cases (the word "Hola" or "Soy" was lost), and "En Equipo" (a menu path) was masked as a name. No leak, but over-masking. An earlier over-masking check missed it because it read a stale vault file. Fix: greeting words are stripped from names, phrases starting with a preposition are not names, and the check now runs in memory. Eval run 5 re-ran on the corrected masking.
+6. **Earlier, the classifier could fall back to a different model on a refusal.** Removed: a refusal now goes to a human like any other failure.
 
 Both fixes were tuned on the same 60 cases they are scored on, so the passing numbers are in-sample. The honest next step is a fresh held-out set, and a model-side risk flag as a second net behind the word list.
 
 ## Evaluation results (real model, committed in `eval_runs/`)
 
-| Check | Run 1 | Run 2 | Run 4 (latest) | Target |
-|---|---|---|---|---|
-| Reason accuracy | 98% (59/60) | 98% (59/60) | 98% (59/60) | at least 85% |
-| Activation vs decline confusions | 0 | 0 | 0 | as few as possible |
-| PII found in what was sent | 0 | 0 | 0 | 0 |
-| Risk cases not sent to a human | 4 | 0 | 0 | 0 |
-| Top P agreement (tracked, not gated) | 57% | 53% | 52% | none |
-| Human-human agreement | Not measured | Not measured | Not measured | needed for Gate 0 |
-| Gate 0 offline checks | FAIL | PASS | PASS | |
+| Check | Run 1 | Run 2 | Run 4 | Run 5 (latest) | Target |
+|---|---|---|---|---|---|
+| Reason accuracy | 98% (59/60) | 98% (59/60) | 98% (59/60) | 98% (59/60) | at least 85% |
+| Activation vs decline confusions | 0 | 0 | 0 | 0 | as few as possible |
+| PII found in what was sent | 0 | 0 | 0 | 0 | 0 |
+| Risk cases not sent to a human | 4 | 0 | 0 | 0 | 0 |
+| Top P agreement (tracked, not gated) | 57% | 53% | 52% | 57% | none |
+| Human-human agreement | Not measured | Not measured | Not measured | Not measured | needed for Gate 0 |
+| Gate 0 offline checks | FAIL | PASS | PASS | PASS | |
 
-Run 3 added the repeat-contact rule (route agreement with the labels went from 50 to 55 of 60). Run 4 re-ran after the phone masking fix.
+Run 3 added the repeat-contact rule (route agreement with the labels went from 50 to 55 of 60). Run 4 re-ran after the phone masking fix. Run 5 re-ran after the name masking fix.
 
 The one reason miss: C041, a new tax field after a regulatory change, labeled `unknown`; the model said `invoice_reconciliation` at 0.80, so it went to the review queue rather than being auto-tagged.
 

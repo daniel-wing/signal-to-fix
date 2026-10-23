@@ -6,6 +6,7 @@
   python3 run.py serve            open the page at http://localhost:8000
 """
 import json
+import os
 import sys
 from datetime import datetime
 
@@ -214,10 +215,13 @@ def serve():
     host, port = cfg["server"]["host"], cfg["server"]["port"]
     url = f"http://localhost:{port}"
     print(f"Serving {url}  (Ctrl+C to stop)")
-    try:
-        webbrowser.open(url)
-    except Exception:
-        pass
+    if os.environ.get("DISPLAY") or sys.platform == "darwin":
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+    else:
+        print(f"Headless machine. From your laptop: ssh -L {port}:localhost:{port} <this-host>, then open {url}")
     ThreadingHTTPServer((host, port), Handler).serve_forever()
 
 
