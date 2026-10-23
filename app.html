@@ -239,6 +239,7 @@ table.matrix td.cell { min-width: 110px; }
     <div class="block"><h3>Key findings <span class="aside">(written from the numbers by fixed rules, not by the AI model)</span></h3><ol class="how" id="findings"></ol></div>
     <div class="block hidden" id="alerts"></div>
     <div class="block"><h3>Summary by category <span class="aside">(largest first; click a category name to jump to its detail)</span></h3><div class="tscroll" id="execTable"></div></div>
+    <div class="block hidden" id="emergingBlock"><h3>Cases that fit no category <span class="aside">(a person reads each one and decides whether it needs a new category)</span></h3><div class="tscroll" id="emergingTable"></div></div>
     <div class="block grid2">
       <div><h3>Root cause across all cases <span class="aside">(average share of the 4Ps)</span></h3><div id="p4All"></div></div>
       <div><h3>Cases by market <span class="aside">(highlighted where a category is much more common in that market than overall)</span></h3><div class="tscroll" id="marketTable"></div></div>
@@ -421,7 +422,7 @@ function renderStep3(res, alerts) {
   if (mk) F.push(`<span class="fg">${cat(mk[0])}</span> is mostly a ${esc(mk[1])} problem: ${mk[3]} of its ${groups[mk[0]].length} cases (${pct(mk[2])}).`);
   if (alerts && !alerts.error) for (const r of alerts.rows.filter(x => x.alert))
     F.push(`<span class="accent">${cat(r.reason)} jumped in the last days of the file: ${r.recent} cases, ${r.ratio === null ? "new in these days" : r.ratio.toFixed(1) + "× its usual share"}. See the spike alert.</span>`);
-  if (emerging) F.push(`${emerging} case${emerging > 1 ? "s fit" : " fits"} no known category. A person should read ${emerging > 1 ? "them" : "it"} and decide whether a new category is needed.`);
+  if (emerging) F.push(`${emerging} case${emerging > 1 ? "s fit" : " fits"} no known category. A person should read ${emerging > 1 ? "them" : "it"} and decide whether a new category is needed. <a href="#emergingBlock">See ${emerging > 1 ? "them" : "it"} below</a>.`);
   $("findings").innerHTML = F.map(f => `<li>${f}</li>`).join("");
 
   let al = "";
@@ -455,6 +456,16 @@ function renderStep3(res, alerts) {
         <td>${count(rs, needsPerson)} <span class="faint">of ${c}</span></td>
         <td class="say">${q ? `"${esc(q.q)}"` : '<span class="faint">No quote</span>'}</td></tr>`;
     }).join("") + "</table>";
+
+  /* Cases that fit no category: shown in full, since a person has to name them */
+  const em = groups.unknown || [];
+  $("emergingBlock").classList.toggle("hidden", !em.length);
+  $("emergingTable").innerHTML = em.length ? `<table><tr><th>Case</th><th>Market</th><th>Channel</th><th>Date</th>
+      <th>Conversation <span class="aside">(as sent, personal data hidden)</span></th><th>Why it fits no category</th><th>Next step</th></tr>`
+    + em.map(r => { const m = r.meta || {}, c = r.classification;
+        return `<tr><td>${esc(r.id)}</td><td>${esc(m.market || "")}</td><td>${esc(m.channel || "")}</td><td style="white-space:nowrap">${esc(m.date || "")}</td>
+          <td class="text">${hiTok(r.masked || "")}</td><td style="min-width:220px">${esc(c ? c.rationale : "")}</td><td>${routeLabel(routeKey(r))}<br><span class="note">${esc(r.route ? r.route.why : "")}</span></td></tr>`; }).join("")
+    + "</table>" : "";
 
   /* Root cause across all cases */
   if (all4) {
