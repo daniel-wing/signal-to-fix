@@ -1,4 +1,4 @@
-# Signal-to-Fix
+# UpstreamW
 
 A small working prototype of one internal AI workflow for LumenPay (a synthetic company; business case Deliverable 4). It turns closed support conversations into classified, routed signals for Operations and Product, without sending personal data to the cloud.
 

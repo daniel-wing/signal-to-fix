@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Signal-to-Fix</title>
+<title>UpstreamW</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -53,7 +53,17 @@ h4 { margin: 0 0 8px; font-size: 17px; font-weight: 600; color: var(--fg); }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 48px; }
 .stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; gap: 32px; } .stats, .stats.three { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
+.stats.five { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 32px; }
+.deep { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--line); }
+table.exec td { vertical-align: top; }
+table.exec td.share { min-width: 180px; }
+table.exec td.say { min-width: 260px; max-width: 360px; font-size: 13px; font-style: italic; }
+table.exec a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--faint); }
+.minibar { display: grid; grid-template-columns: 1fr 76px; gap: 8px; align-items: center; }
+.minibar .val { text-align: right; color: var(--fg); }
+.minibar .val span { color: var(--muted); }
+td.hi { color: var(--accent); }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; gap: 32px; } .stats, .stats.three, .stats.five { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
 .block { margin-top: 48px; }
 .hidden { display: none; }
 .fade { animation: fade 250ms ease-out; }
@@ -150,10 +160,10 @@ table.matrix td.cell { min-width: 110px; }
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>Signal-to-Fix</h1>
+    <h1>UpstreamW</h1>
     <div class="right"><a href="/how">How it works</a><span class="synthetic">Synthetic data only</span></div>
   </div>
-  <p class="lede">Upload a file of support conversations. Signal-to-Fix protects personal data, sorts every case into a customer pain category and its root cause, and summarizes what customers are telling us. People read the results and write the recommendation.</p>
+  <p class="lede">Upload a file of support conversations. UpstreamW protects personal data, sorts every case into a customer pain category and its root cause, and summarizes what customers are telling us. People read the results and write the recommendation.</p>
   <nav>
     <a href="#upload">Upload</a><a href="#step1">1. Protect personal data</a><a href="#step2">2. Sort each case</a><a href="#step3">3. What customers are telling us</a><a href="#trust">How far to trust it</a>
   </nav>
@@ -219,10 +229,18 @@ table.matrix td.cell { min-width: 110px; }
     <p class="eyebrow">Step 3</p>
     <h2>What these customers are telling us</h2>
     <p class="note" id="sourceLine" style="margin:-4px 0 32px"></p>
-    <div class="stats" id="topStats"></div>
+    <p class="eyebrow">Summary at a glance</p>
+    <div class="stats five" id="topStats"></div>
+    <div class="block"><h3>Key findings <span class="aside">(written from the numbers by fixed rules, not by the AI model)</span></h3><ol class="how" id="findings"></ol></div>
     <div class="block hidden" id="alerts"></div>
-    <div class="block"><h3>Customer pain categories</h3><div id="catChart" style="max-width:900px"></div></div>
-    <div class="block"><h3>Root cause by category <span class="aside">(average share of the 4Ps; the largest in each row is highlighted)</span></h3><div class="tscroll" id="matrix"></div></div>
+    <div class="block"><h3>Summary by category <span class="aside">(largest first; click a category name to jump to its detail)</span></h3><div class="tscroll" id="execTable"></div></div>
+    <div class="block grid2">
+      <div><h3>Root cause across all cases <span class="aside">(average share of the 4Ps)</span></h3><div id="p4All"></div></div>
+      <div><h3>Cases by market <span class="aside">(highlighted where a category is much more common in that market than overall)</span></h3><div class="tscroll" id="marketTable"></div></div>
+    </div>
+
+    <p class="eyebrow deep">The deeper analysis</p>
+    <div class="block" style="margin-top:16px"><h3>Root cause by category <span class="aside">(average share of the 4Ps; the largest in each row is highlighted)</span></h3><div class="tscroll" id="matrix"></div></div>
     <div class="block">
       <h3>Category by category</h3>
       <div id="catDetail"></div>
@@ -335,14 +353,71 @@ function renderStep3(res, alerts) {
   for (const r of recs) (groups[reasonOf(r)] = groups[reasonOf(r)] || []).push(r);
   const order = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
   const n = recs.length;
-  const person = recs.filter(r => routeKey(r) !== "auto_tag").length;
-  const repeats = recs.filter(r => r.classification && r.classification.is_repeat).length;
+  const isRep = r => r.classification && r.classification.is_repeat;
+  const isDef = r => r.classification && r.classification.is_defect;
+  const needsPerson = r => routeKey(r) !== "auto_tag";
+  const count = (rs, f) => rs.filter(f).length;
+  const tally = (rs, f) => { const o = {}; for (const r of rs) { const v = f(r); if (v) o[v] = (o[v] || 0) + 1; } return o; };
+  const ranked = o => Object.entries(o).sort((x, y) => y[1] - x[1]);
+  const avgShares = rs => {
+    const shs = rs.map(r => r.classification && shares(r.classification)).filter(Boolean);
+    return shs.length ? Object.fromEntries(PS.map(p => [p, shs.reduce((a, s) => a + s[p], 0) / shs.length])) : null;
+  };
+  const avg = Object.fromEntries(order.map(k => [k, avgShares(groups[k])]));
+  const all4 = avgShares(recs);
+  const known = order.filter(k => CATS.includes(k));
+  const emerging = (groups.unknown || []).length;
+  const repeats = count(recs, isRep), person = count(recs, needsPerson), defects = count(recs, isDef);
   const top = order[0];
+  const anchor = k => "cat-" + k;
+
+  // In their words: evidence quotes, preferring what the customer said over what the agent said
+  const customerSaid = (r, q) => (r.masked || "").split("\n").some(l => /^cliente:/i.test(l) && l.includes(q));
+  const quotesFor = rs => rs.filter(r => r.classification)
+    .flatMap(r => PS.filter(p => r.classification.four_p[p].quote).map(p => ({id: r.id, p, q: r.classification.four_p[p].quote,
+      cust: customerSaid(r, r.classification.four_p[p].quote), w: r.classification.four_p[p].score})))
+    .sort((x, y) => (y.cust - x.cust) || (y.w - x.w))
+    .filter((q, i, all) => all.findIndex(o => o.id === q.id) === i);  // one quote per case
+
+  /* Headline numbers */
   $("topStats").innerHTML = `
     <div class="stat"><div class="num">${n}</div><div class="lbl">Cases analyzed</div></div>
-    <div class="stat"><div class="num key">${pct(groups[top].length / n)}</div><div class="lbl">${esc(cat(top))}, the largest customer pain category (${groups[top].length} cases)</div></div>
+    <div class="stat"><div class="num">${known.length}</div><div class="lbl">Customer pain categories present, out of ${CATS.length} fixed ones${emerging ? `, plus ${emerging} emerging case${emerging > 1 ? "s" : ""}` : ""}</div></div>
+    <div class="stat"><div class="num key">${pct(groups[top].length / n)}</div><div class="lbl">${esc(cat(top))}, the largest category (${groups[top].length} cases)</div></div>
     <div class="stat"><div class="num">${pct(repeats / n)}</div><div class="lbl">Repeat contacts: the first contact did not solve it (${repeats} cases)</div></div>
     <div class="stat"><div class="num">${pct(person / n)}</div><div class="lbl">Need a person: review, emerging or human-led (${person} cases)</div></div>`;
+
+  /* Key findings: fixed rules over the numbers, so the same file always gives the same sentences */
+  const F = [];
+  let cum = 0; const heads = [];
+  for (const k of known) { heads.push(k); cum += groups[k].length; if (cum / n >= 0.5 || heads.length === 3) break; }
+  if (heads.length > 1) F.push(`<span class="fg">${heads.map(cat).join(" and ")}</span> make up ${pct(cum / n)} of all cases (${cum} of ${n}).`);
+  if (all4) {
+    const pr = PS.slice().sort((x, y) => all4[y] - all4[x]);
+    const leads = known.filter(k => avg[k] && topP(avg[k]) === pr[0]);
+    F.push(`Across all cases the most common root cause is <span class="fg">${PNAME[pr[0]]}</span> (${pct(all4[pr[0]])} on average), then ${PNAME[pr[1]]} (${pct(all4[pr[1]])}). ${PNAME[pr[0]]} leads in ${leads.length} of ${known.length} categories${leads.length ? ": " + leads.map(cat).join(", ") : ""}.`);
+  }
+  if (repeats) {
+    const byCat = ranked(tally(recs.filter(isRep), reasonOf));
+    const rate = known.map(k => [k, count(groups[k], isRep) / groups[k].length]).sort((x, y) => y[1] - x[1])[0];
+    let s = byCat[0][1] / repeats >= 0.5
+      ? `Repeat contacts concentrate in <span class="fg">${cat(byCat[0][0])}</span>: ${byCat[0][1]} of the ${repeats} repeats.`
+      : `Repeat contacts are spread across categories; the most are in <span class="fg">${cat(byCat[0][0])}</span> (${byCat[0][1]} of ${repeats}).`;
+    if (rate && rate[0] !== byCat[0][0] && rate[1] > 0) s += ` The highest repeat rate is ${cat(rate[0])}, where ${pct(rate[1])} of cases are repeats.`;
+    F.push(s);
+  }
+  if (defects) {
+    const byCat = ranked(tally(recs.filter(isDef), reasonOf));
+    F.push(`${defects} case${defects > 1 ? "s" : ""} point to something broken in the product, ${byCat[0][1]} of them in <span class="fg">${cat(byCat[0][0])}</span>.`);
+  } else F.push("No case points to something broken in the product. The friction comes from rules, steps and unclear screens.");
+  let mk = null;  // the category most concentrated in one market, at least 3 cases there
+  for (const k of known) for (const [m, c] of ranked(tally(groups[k], r => r.meta && r.meta.market)))
+    if (c >= 3 && c / groups[k].length >= 0.6 && (!mk || c / groups[k].length > mk[2])) mk = [k, m, c / groups[k].length, c];
+  if (mk) F.push(`<span class="fg">${cat(mk[0])}</span> is mostly a ${esc(mk[1])} problem: ${mk[3]} of its ${groups[mk[0]].length} cases (${pct(mk[2])}).`);
+  if (alerts && !alerts.error) for (const r of alerts.rows.filter(x => x.alert))
+    F.push(`<span class="accent">${cat(r.reason)} jumped in the last days of the file: ${r.recent} cases, ${r.ratio === null ? "new in these days" : r.ratio.toFixed(1) + "× its usual share"}. See the spike alert.</span>`);
+  if (emerging) F.push(`${emerging} case${emerging > 1 ? "s fit" : " fits"} no known category. A person should read ${emerging > 1 ? "them" : "it"} and decide whether a new category is needed.`);
+  $("findings").innerHTML = F.map(f => `<li>${f}</li>`).join("");
 
   let al = "";
   if (alerts && !alerts.error) {
@@ -356,19 +431,48 @@ function renderStep3(res, alerts) {
   $("alerts").innerHTML = al ? `<h3>Spike alert</h3>${al}` : "";
   $("alerts").classList.toggle("hidden", !al);
 
+  /* Summary by category: one row per category, the share of volume drawn as a bar */
   const max = groups[top].length;
-  $("catChart").innerHTML = order.map((k, i) => {
-    const c = groups[k].length;
-    return `<div class="hbar" title="${esc(cat(k))}: ${c} cases, ${pct(c / n)}"><span class="name">${esc(cat(k))}</span>
-      <div class="track"><div class="fill${i === 0 ? " lead" : ""}" style="width:${(c / max) * 100}%"></div></div>
-      <span class="val">${c} <span>${pct(c / n)}</span></span></div>`;
-  }).join("");
+  $("execTable").innerHTML = `<table class="exec"><tr><th>Category</th><th>Share of cases</th><th>Repeat contacts</th><th>Main root cause</th>
+      <th>Most common detail</th><th>Need a person</th><th>What customers say</th></tr>`
+    + order.map((k, i) => {
+      const rs = groups[k], a = avg[k], c = rs.length;
+      const lead = a && topP(a);
+      const sub = ranked(tally(rs, r => r.classification && r.classification.sub_reason))[0];
+      const q = quotesFor(rs)[0];
+      const rep = count(rs, isRep);
+      return `<tr><td><a href="#${anchor(k)}">${esc(cat(k))}</a></td>
+        <td class="share"><div class="minibar" title="${esc(cat(k))}: ${c} cases, ${pct(c / n)}"><div class="ctrack"><div class="cfill${i === 0 ? " lead" : ""}" style="width:${(c / max) * 100}%"></div></div>
+          <span class="val">${pct(c / n)} <span>${c}</span></span></div></td>
+        <td>${rep ? `${rep} <span class="faint">of ${c}</span>` : '<span class="faint">None</span>'}</td>
+        <td>${a ? `<span class="fg">${PNAME[lead]}</span> ${pct(a[lead])}` : '<span class="faint">No clear cause</span>'}</td>
+        <td>${sub ? `${esc(words(sub[0]))} <span class="faint">${sub[1]}</span>` : '<span class="faint">None</span>'}</td>
+        <td>${count(rs, needsPerson)} <span class="faint">of ${c}</span></td>
+        <td class="say">${q ? `"${esc(q.q)}"` : '<span class="faint">No quote</span>'}</td></tr>`;
+    }).join("") + "</table>";
 
-  const avg = {};
-  for (const k of order) {
-    const shs = groups[k].map(r => r.classification && shares(r.classification)).filter(Boolean);
-    avg[k] = shs.length ? Object.fromEntries(PS.map(p => [p, shs.reduce((a, s) => a + s[p], 0) / shs.length])) : null;
-  }
+  /* Root cause across all cases */
+  if (all4) {
+    const lead = topP(all4), pmax = Math.max(...PS.map(p => all4[p]));
+    $("p4All").innerHTML = PS.slice().sort((x, y) => all4[y] - all4[x]).map(p =>
+      `<div class="hbar" title="${PNAME[p]}: ${pct(all4[p])} on average"><span class="name">${PNAME[p]}</span>
+        <div class="track"><div class="fill${p === lead ? " lead" : ""}" style="width:${(all4[p] / pmax) * 100}%"></div></div>
+        <span class="val">${pct(all4[p])}</span></div>`).join("");
+  } else $("p4All").innerHTML = '<p class="note">Not measured.</p>';
+
+  /* Cases by market: count per cell, highlighted when the category is at least 1.5 times as common there as overall */
+  const markets = ranked(tally(recs, r => r.meta && r.meta.market)).map(x => x[0]);
+  if (markets.length) {
+    const inMk = Object.fromEntries(markets.map(m => [m, count(recs, r => r.meta && r.meta.market === m)]));
+    $("marketTable").innerHTML = `<table><tr><th>Category</th>${markets.map(m => `<th class="num">${esc(m)} <span class="aside">${inMk[m]}</span></th>`).join("")}</tr>`
+      + order.map(k => `<tr><td>${esc(cat(k))}</td>` + markets.map(m => {
+        const c = count(groups[k], r => r.meta && r.meta.market === m);
+        const hi = c >= 3 && (c / inMk[m]) >= 1.5 * (groups[k].length / n);
+        return `<td class="num${hi ? " hi" : ""}" title="${esc(cat(k))} in ${esc(m)}: ${c} of ${inMk[m]} cases there">${c || '<span class="faint">0</span>'}</td>`;
+      }).join("") + "</tr>").join("") + "</table>";
+  } else $("marketTable").innerHTML = '<p class="note">Not measured: the file has no market field.</p>';
+
+  /* The deeper analysis */
   $("matrix").innerHTML = `<table class="matrix"><tr><th>Category</th>${PS.map(p => `<th>${PNAME[p]}</th>`).join("")}</tr>`
     + order.map(k => {
       const a = avg[k];
@@ -382,37 +486,23 @@ function renderStep3(res, alerts) {
     const rs = groups[k], a = avg[k];
     let causes = '<span class="faint">No clear cause</span>';
     if (a) {
-      const ranked = PS.slice().sort((x, y) => a[y] - a[x]);
-      causes = `<span class="fg">${PNAME[ranked[0]]} ${pct(a[ranked[0]])}</span>, then ${PNAME[ranked[1]]} ${pct(a[ranked[1]])}`;
+      const pr = PS.slice().sort((x, y) => a[y] - a[x]);
+      causes = `<span class="fg">${PNAME[pr[0]]} ${pct(a[pr[0]])}</span>, then ${PNAME[pr[1]]} ${pct(a[pr[1]])}`;
     }
-    const subs = {}, markets = {};
-    let rep = 0, def = 0;
-    for (const r of rs) {
-      const c = r.classification;
-      if (c && c.sub_reason) subs[c.sub_reason] = (subs[c.sub_reason] || 0) + 1;
-      const mk = (r.meta && r.meta.market) || "Not set"; markets[mk] = (markets[mk] || 0) + 1;
-      if (c && c.is_repeat) rep++;
-      if (c && c.is_defect) def++;
-    }
-    const list = o => Object.entries(o).sort((x, y) => y[1] - x[1]).map(([x, c]) => `${esc(words(x))} ${c}`).join(", ");
-    // In their words: evidence quotes, preferring what the customer said over what the agent said
-    const customerSaid = (r, q) => (r.masked || "").split("\n").some(l => /^cliente:/i.test(l) && l.includes(q));
-    const quotes = rs.filter(r => r.classification)
-      .flatMap(r => PS.filter(p => r.classification.four_p[p].quote).map(p => ({id: r.id, p, q: r.classification.four_p[p].quote,
-        cust: customerSaid(r, r.classification.four_p[p].quote), w: r.classification.four_p[p].score})))
-      .sort((x, y) => (y.cust - x.cust) || (y.w - x.w))
-      .filter((q, i, all) => all.findIndex(o => o.id === q.id) === i)  // one quote per case
-      .slice(0, 2);
-    return `<div class="cat"><h4>${esc(cat(k))} <span class="note">${rs.length} cases, ${pct(rs.length / n)}</span></h4>
+    const list = o => ranked(o).map(([x, c]) => `${esc(words(x))} ${c}`).join(", ");
+    const subs = tally(rs, r => r.classification && r.classification.sub_reason);
+    const mks = tally(rs, r => (r.meta && r.meta.market) || "Not set");
+    const quotes = quotesFor(rs).slice(0, 2);
+    return `<div class="cat" id="${anchor(k)}"><h4>${esc(cat(k))} <span class="note">${rs.length} cases, ${pct(rs.length / n)}</span></h4>
       <div class="facts">
         <div><span class="k">Main root cause</span>${causes}</div>
         <div><span class="k">Detail</span>${list(subs) || '<span class="faint">None</span>'}</div>
-        <div><span class="k">Markets</span>${list(markets)}</div>
+        <div><span class="k">Markets</span>${list(mks)}</div>
       </div>
       <div class="facts">
-        <div><span class="k">Repeat contacts</span>${rep} of ${rs.length}</div>
-        <div><span class="k">Product defects flagged</span>${def} of ${rs.length}</div>
-        <div><span class="k">Need a person</span>${rs.filter(r => routeKey(r) !== "auto_tag").length} of ${rs.length}</div>
+        <div><span class="k">Repeat contacts</span>${count(rs, isRep)} of ${rs.length}</div>
+        <div><span class="k">Product defects flagged</span>${count(rs, isDef)} of ${rs.length}</div>
+        <div><span class="k">Need a person</span>${count(rs, needsPerson)} of ${rs.length}</div>
       </div>
       ${quotes.length ? `<span class="k" style="display:block;margin-top:16px;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">In their words</span>` : ""}
       ${quotes.map(q => `<blockquote>"${esc(q.q)}"<cite>${esc(q.id)}, ${q.cust ? "customer" : "agent"}, points to ${PNAME[q.p]}</cite></blockquote>`).join("")}

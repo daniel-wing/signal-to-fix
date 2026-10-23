@@ -1,4 +1,4 @@
-"""Signal-to-Fix entry point.
+"""UpstreamW entry point.
 
   python3 run.py check            config, Ollama, model access, one tiny model call
   python3 run.py                  run every case in cases_raw.json, save results/latest.json
