@@ -1,6 +1,6 @@
 """Signal-to-Fix entry point.
 
-  python3 run.py check            config, Ollama, API key, one tiny API call
+  python3 run.py check            config, Ollama, model access, one tiny model call
   python3 run.py                  run every case in cases_raw.json, save results/latest.json
   python3 run.py --only C001      run one case and print every stage
   python3 run.py serve            open the page at http://localhost:8000
@@ -9,7 +9,7 @@ import json
 import sys
 from datetime import datetime
 
-from classify import ClassificationUnavailable, call_llm, classify
+from classify import ClassificationUnavailable, available, call_llm, classify
 from common import ROOT, api_key, load_config, ollama_models, path
 from mask import case_text, leak_check, mask, save_vault
 from route import route
@@ -36,16 +36,21 @@ def check():
         print(f"ollama:   FAIL (not reachable at {cfg['ollama']['url']}: {e})")
         ok = False
 
-    present = bool(api_key(cfg))
-    print(f"api key:  {'yes' if present else 'no'}")
+    backend = cfg["llm"]["backend"]
+    if backend == "api":
+        present = bool(api_key(cfg))
+        print(f"api key:  {'yes' if present else 'no'}")
+    else:
+        present = available(cfg)
+        print(f"backend:  Claude Code CLI ({cfg['llm']['cli']}) {'found' if present else 'NOT FOUND'}")
     if not present:
         return False
 
     try:
         text, model = call_llm(cfg, "Reply with the single word OK.", "ping")
-        print(f"api call: OK ({model} replied {text.strip()[:20]!r})")
+        print(f"llm call: OK ({model} replied {text.strip()[:20]!r})")
     except ClassificationUnavailable as e:
-        print(f"api call: FAIL ({e})")
+        print(f"llm call: FAIL ({e})")
         ok = False
     return ok
 

@@ -21,7 +21,7 @@ def expected(meta, field):
     """Find an expected label whatever the case file calls it."""
     for container in (meta.get("expected"), meta.get("labels"), meta.get("label"), meta):
         if isinstance(container, dict):
-            for k in (field, f"expected_{field}"):
+            for k in (field, f"expected_{field}", f"expected_{field.removeprefix('contact_')}"):
                 if container.get(k) is not None:
                     return container[k]
     return None
@@ -31,7 +31,7 @@ def is_risk_case(meta):
     for v in (expected(meta, "is_risk"), expected(meta, "risk")):
         if v is not None:
             return bool(v)
-    return expected(meta, "route") == "human_led" and bool(expected(meta, "risk_reason"))
+    return expected(meta, "route") == "human_led"
 
 
 def score(cfg, records, cases):

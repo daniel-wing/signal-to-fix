@@ -10,9 +10,13 @@ ollama:
   timeout_seconds: 90
 
 # Cloud classifier. Receives masked text only.
+# backend: claude_code uses the Claude Code CLI installed on this machine (subscription login).
+#          api uses the Anthropic API with the key named below in .env.
 llm:
+  backend: claude_code
+  cli: claude                      # Claude Code command; change it to break the call on purpose
   model: claude-sonnet-5-5
-  api_key_env: ANTHROPIC_API_KEY   # name of the variable in .env, never the key itself
+  api_key_env: ANTHROPIC_API_KEY   # only for backend: api; name of the variable, never the key itself
   effort: low                      # low | medium | high
   max_tokens: 4000
   timeout_seconds: 90

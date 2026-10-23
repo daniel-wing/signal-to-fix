@@ -25,13 +25,21 @@ PATTERNS = [
                r"(?:pesos|reales|reais|MXN|COP|BRL|USD|d[oó]lares)\b"),
     ("PHONE", r"(?<![\w\[])\+?(?:\d[\s().-]{0,2}){8,14}\d\b"),  # 9+ digits, so dates are not phones
     ("ID", r"\b\d{5,}\b"),
+    # Any other standalone 4 digits ("cartao 5561", a reply of just "7716"), except years.
+    ("CARD_LAST4", r"(?<![\d.,/:-])\b(?!(?:19|20)\d\d\b)(\d{4})\b(?![.,:/-]?\d)"),
 ]
 COMPILED = [(label, re.compile(rx, 0 if label in ("RFC", "ACCOUNT") else re.IGNORECASE))
             for label, rx in PATTERNS]
 TOKEN_RE = re.compile(r"\[[A-Z0-9_]+_\d+\]")
-# "soy Jorge", "me llamo Ana Ruiz": a capitalized name right after these is a name.
-NAME_HINT_RE = re.compile(r"\b(?:soy|me llamo|mi nombre es|le atiende|te atiende|habla)\s+"
-                          r"([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+){0,2})")
+# Cues that a capitalized name follows or precedes. Names from these join the model's list.
+CAP = r"[A-ZÁÉÍÓÚÑÂÊÔÃÕÇ][a-záéíóúñâêôãõç]+"
+NAME_HINT_RES = [
+    # "soy Jorge", "Hola Débora Vieira", "Gracias Camilo"
+    re.compile(r"\b(?i:soy|me llamo|mi nombre es|le atiende|te atiende|habla|hola|gracias)\s+"
+               rf"({CAP}(?:\s+{CAP}){{0,3}})"),
+    # "Cliente: Larissa Duarte, [ACCOUNT_1]" (name given when the agent asks for it)
+    re.compile(rf"^(?:Cliente|Agente):\s*({CAP}(?:\s+{CAP}){{1,3}})\s*,", re.MULTILINE),
+]
 NEVER_PII = {"lumenpay", "cliente", "agente", "soporte", "hola", "gracias"}
 
 LOCAL_PROMPT = """Eres un detector de datos personales. Lee la conversacion de soporte y devuelve SOLO un JSON:
@@ -93,7 +101,8 @@ class Masker:
         raw = ollama_generate(cfg, LOCAL_PROMPT.format(text=text))
         found = json.loads(raw)  # invalid JSON raises: the caller treats it as a masking failure
         names = [n for n in found.get("names", []) if isinstance(n, str)]
-        names += NAME_HINT_RE.findall(text)
+        for rx in NAME_HINT_RES:
+            names += rx.findall(text)
         addresses = [a for a in found.get("addresses", []) if isinstance(a, str)]
         # Only accept values that really are in the text (the small model can invent).
         for addr in sorted(addresses, key=len, reverse=True):
@@ -143,7 +152,7 @@ def save_vault(cfg, case_id, mapping):
 
 def planted_values(case):
     """PII values the case author planted, if the case file lists them."""
-    pii = case.get("planted_pii") or case.get("pii") or []
+    pii = case.get("pii_values") or case.get("planted_pii") or case.get("pii") or []
     if isinstance(pii, dict):
         pii = [v for vals in pii.values() for v in (vals if isinstance(vals, list) else [vals])]
     return [p if isinstance(p, str) else str(p.get("value", "")) for p in pii]

@@ -1,6 +1,7 @@
 """Cloud classification. Receives masked text only; the caller must run the leak check first."""
 import json
 import re
+import subprocess
 
 import anthropic
 
@@ -21,6 +22,43 @@ class ClassificationUnavailable(Exception):
 
 
 def call_llm(cfg, system, user):
+    """One model call. Returns (text, model that served it)."""
+    if cfg["llm"]["backend"] == "claude_code":
+        return call_claude_code(cfg, system, user)
+    return call_api(cfg, system, user)
+
+
+def call_claude_code(cfg, system, user):
+    """Headless Claude Code: our system prompt only, no tools, no settings, MCP or saved session."""
+    llm = cfg["llm"]
+    cmd = [llm["cli"], "-p", "--model", llm["model"], "--system-prompt", system,
+           "--tools", "", "--output-format", "json", "--no-session-persistence",
+           "--setting-sources", "", "--strict-mcp-config", "--effort", llm["effort"]]
+    try:
+        proc = subprocess.run(cmd, input=user, capture_output=True, text=True,
+                              timeout=llm["timeout_seconds"])
+        out = json.loads(proc.stdout)
+    except FileNotFoundError:
+        raise ClassificationUnavailable(f"command {llm['cli']!r} not found") from None
+    except subprocess.TimeoutExpired:
+        raise ClassificationUnavailable("timed out") from None
+    except json.JSONDecodeError:
+        raise ClassificationUnavailable(f"no reply (exit code {proc.returncode})") from None
+    if out.get("is_error") or out.get("subtype") != "success":
+        raise ClassificationUnavailable(str(out.get("result") or out.get("subtype"))[:120])
+    models = list(out.get("modelUsage", {})) or [llm["model"]]
+    return out["result"], ", ".join(models)
+
+
+def available(cfg):
+    """Can a call be attempted at all? (key present, or the CLI exists)."""
+    if cfg["llm"]["backend"] == "claude_code":
+        from shutil import which
+        return which(cfg["llm"]["cli"]) is not None
+    return bool(api_key(cfg))
+
+
+def call_api(cfg, system, user):
     """One Messages API call. Returns (text, model that served it)."""
     key = api_key(cfg)
     if not key:
@@ -76,8 +114,9 @@ def classify(cfg, masked_text):
     system = path(cfg, "prompt").read_text(encoding="utf-8")  # read fresh: live prompt edits apply
     user = f"<conversation>\n{masked_text}\n</conversation>"
     out = {"sent": None, "attempts": 0, "model": None, "raw_response": None, "result": None, "error": None}
-    if not api_key(cfg):
-        out["error"] = "unavailable: API key missing"
+    if not available(cfg):
+        out["error"] = ("unavailable: Claude Code command not found" if cfg["llm"]["backend"] == "claude_code"
+                        else "unavailable: API key missing")
         return out
     out["sent"] = {"model": cfg["llm"]["model"], "system": system, "user": user}
     for _ in range(2):

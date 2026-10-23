@@ -1,0 +1,1026 @@
+[
+  {
+    "id": "C001",
+    "date": "2026-06-02",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Mi tarjeta fue rechazada en una compra de $18,500.00 MXN.\nAgente: ¿Tu nombre y cuenta?\nCliente: Roberto Salinas, LP-224509, termina en 8043.\nAgente: La tarjeta tiene un límite diario por transacción menor a ese monto, definido en la política de tu empresa.\nCliente: ¿Dónde veo ese límite? En la app no aparece.\nAgente: No se muestra al titular, solo al admin. Pídele que lo suba o divide la compra.",
+    "pii_values": [
+      "Roberto Salinas",
+      "LP-224509",
+      "termina en 8043",
+      "$18,500.00 MXN"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "hidden_limit",
+    "expected_top_p": "policy",
+    "expected_route": "auto_tag",
+    "design_note": "Daily limit not visible to cardholder."
+  },
+  {
+    "id": "C002",
+    "date": "2026-06-03",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: Hola, activé mi tarjeta y sigue en pendiente. Soy Rafael Souza, cuenta LP-204811.\nAgente: Hola Rafael, ¿con qué dígitos termina la tarjeta?\nCliente: Termina en 4821.\nAgente: Veo la solicitud recibida. El procesador puede tardar hasta 15 minutos en confirmar.\nCliente: ¿Y si pasa ese tiempo?\nAgente: Escríbenos de nuevo y lo escalamos. Te llegará un correo a rafael.souza@empresa-demo.test cuando quede activa.\nCliente: Ok, espero.",
+    "pii_values": [
+      "Rafael Souza",
+      "LP-204811",
+      "Termina en 4821",
+      "rafael.souza@empresa-demo.test"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "processor_delay",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Clear pending status within the 15 minute window."
+  },
+  {
+    "id": "C003",
+    "date": "2026-06-03",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: La factura de $12,300.00 MXN no concilia, dice campos fiscales incompletos.\nAgente: ¿Tu nombre y cuenta?\nCliente: Alejandra Fuentes, LP-330418. El RFC de la empresa es FUEA850312AB1.\nAgente: Falta el uso de CFDI en la factura. Sin ese campo no empareja con el gasto.\nCliente: ¿Lo puedo agregar yo?\nAgente: Sí, edita el campo y vuelve a conciliar.",
+    "pii_values": [
+      "Alejandra Fuentes",
+      "LP-330418",
+      "FUEA850312AB1",
+      "$12,300.00 MXN"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "tax_fields",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "CFDI uso field missing for reconciliation."
+  },
+  {
+    "id": "C004",
+    "date": "2026-06-04",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: Mi tarjeta dice inactiva pero ya me llegó el SMS de que está activa.\nAgente: ¿Tu nombre y cuenta?\nCliente: Juliana Carvalho, LP-290118. Termina en 5507.\nAgente: Del lado del procesador figura activa. Hay que refrescar el estado en la plataforma. Ya lo hice.\nCliente: Ahora sí aparece activa.\nAgente: Listo. Cierra y abre la app si no la ves.",
+    "pii_values": [
+      "Juliana Carvalho",
+      "LP-290118",
+      "Termina en 5507"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "needs_status_refresh",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Card already active at processor but app status stale until refresh."
+  },
+  {
+    "id": "C005",
+    "date": "2026-06-04",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: ¿Cómo agrego a un nuevo empleado con tarjeta?\nAgente: ¿Tu nombre y cuenta?\nCliente: Adriana Freitas, LP-338214, soy admin.\nAgente: En Equipo, agregar usuario, asigna límite y solicita tarjeta.\nCliente: Perfecto, gracias.",
+    "pii_values": [
+      "Adriana Freitas",
+      "LP-338214"
+    ],
+    "expected_reason": "how_to_policy",
+    "expected_sub_reason": null,
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "How to add a new cardholder."
+  },
+  {
+    "id": "C006",
+    "date": "2026-06-04",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Me rechazó la tarjeta en línea pero la volví a intentar y pasó.\nAgente: ¿Tu nombre y cuenta?\nCliente: Héctor Villalobos, LP-119307, termina en 5560.\nAgente: Veo un timeout del procesador en el primer intento. Fue un fallo temporal.\nCliente: ¿Puede volver a pasar?\nAgente: Es posible, pero es raro. Reintenta si ocurre.",
+    "pii_values": [
+      "Héctor Villalobos",
+      "LP-119307",
+      "termina en 5560"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "processor_timeout",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Intermittent timeout, second attempt works."
+  },
+  {
+    "id": "C007",
+    "date": "2026-06-05",
+    "market": "MX",
+    "channel": "whatsapp",
+    "text": "Cliente: hola activé mi tarjeta hace 5 min y dice pendiente\nAgente: Hola Karla Mendoza, ¿me confirmas los últimos 4 dígitos?\nCliente: termina en 7730\nAgente: Perfecto, está en proceso. Puede tardar hasta 15 minutos en pasar a activa.\nCliente: ah ok, ya pensé q estaba mal\nAgente: Todo bien, si en 15 min sigue igual me escribes.",
+    "pii_values": [
+      "Karla Mendoza",
+      "termina en 7730"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "processor_delay",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "WhatsApp style, card pending only minutes after activation."
+  },
+  {
+    "id": "C008",
+    "date": "2026-06-05",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: Ya llamé ayer por esto. Mi tarjeta fue rechazada en un restaurante, siempre la usé ahí.\nAgente: ¿Tu nombre y cuenta?\nCliente: Leonardo Martins, LP-662904, termina en 7733.\nAgente: Tu admin bloqueó la categoría restaurantes hace dos días.\nCliente: Nadie me avisó.\nAgente: Cierto, el sistema no notifica al titular. Pide al admin que la reactive.",
+    "pii_values": [
+      "Leonardo Martins",
+      "LP-662904",
+      "termina en 7733"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "admin_category_block",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Admin blocked restaurants category without notice."
+  },
+  {
+    "id": "C009",
+    "date": "2026-06-06",
+    "market": "MX",
+    "channel": "whatsapp",
+    "text": "Cliente: oye Iván Cortés aquí, mi tarjeta no se ve activa en la app\nAgente: Hola Iván, ¿qué terminación tiene?\nCliente: termina en 1184\nAgente: Ya está activa en el procesador, solo faltaba actualizar el estado. Te lo refresco ahora.\nCliente: ya salió activa, gracias",
+    "pii_values": [
+      "Iván Cortés",
+      "termina en 1184"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "needs_status_refresh",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "WhatsApp, status stale, agent refreshes."
+  },
+  {
+    "id": "C010",
+    "date": "2026-06-06",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Solo quería agradecer, soy Mauricio Estrada, el soporte de ayer fue excelente.\nAgente: Gracias Mauricio, qué gusto leerte.\nCliente: Eso es todo, buen día.",
+    "pii_values": [
+      "Mauricio Estrada"
+    ],
+    "expected_reason": "other",
+    "expected_sub_reason": null,
+    "expected_top_p": "people",
+    "expected_route": "auto_tag",
+    "design_note": "Compliment, no action needed."
+  },
+  {
+    "id": "C011",
+    "date": "2026-06-07",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: No me llega el código SMS para activar la tarjeta que termina en 3901.\nAgente: ¿Tu nombre y cuenta?\nCliente: Sofía Ramírez, LP-601772.\nAgente: El código se envía al +52 55 5550 0142. ¿Es tu número?\nCliente: No, ese es viejo. El mío es +52 55 5550 0987.\nAgente: Actualizo el teléfono y reenvío el código.\nCliente: Ya me llegó, gracias.",
+    "pii_values": [
+      "Sofía Ramírez",
+      "LP-601772",
+      "+52 55 5550 0142",
+      "+52 55 5550 0987",
+      "termina en 3901"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "wrong_phone",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "SMS code goes to old phone number on file."
+  },
+  {
+    "id": "C012",
+    "date": "2026-06-07",
+    "market": "BR",
+    "channel": "whatsapp",
+    "text": "Cliente: oi, a fatura de R$ 2.980,00 não concilia\nAgente: Hola Mônica Ribeiro, la factura es del 28 y el cobro se liquidó el 3, así que aparece en períodos distintos.\nCliente: e agora?\nAgente: Es una diferencia de fechas con el procesador. Se concilia manualmente asociando ambos.\nCliente: ok faço isso",
+    "pii_values": [
+      "Mônica Ribeiro",
+      "R$ 2.980,00"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "timing_mismatch",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Invoice date precedes processor settlement date."
+  },
+  {
+    "id": "C013",
+    "date": "2026-06-08",
+    "market": "CO",
+    "channel": "chat",
+    "text": "Cliente: Buenas, acabo de activar la tarjeta y el estado dice pendiente.\nAgente: Hola, ¿me das tu nombre y ID de cuenta?\nCliente: Camilo Restrepo, LP-318402.\nAgente: Gracias Camilo. ¿Los últimos cuatro dígitos?\nCliente: Termina en 2299.\nAgente: La activación llegó al procesador. Normalmente tarda hasta 15 minutos en reflejarse.\nCliente: Listo, gracias.",
+    "pii_values": [
+      "Camilo Restrepo",
+      "LP-318402",
+      "Termina en 2299"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "processor_delay",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Colombian cardholder, pending state explained."
+  },
+  {
+    "id": "C014",
+    "date": "2026-06-08",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Mi sistema contable rechaza el archivo exportado.\nAgente: ¿Nombre y cuenta?\nCliente: Fernando Aguilar, LP-882013. Correo fernando.aguilar@empresa-demo.test.\nAgente: El export CSV usa coma como separador decimal en tu configuración regional, y el ERP espera punto.\nCliente: ¿Hay otro formato?\nAgente: Descarga en XLSX o cambia la configuración regional del export.",
+    "pii_values": [
+      "Fernando Aguilar",
+      "LP-882013",
+      "fernando.aguilar@empresa-demo.test"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "export_format",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Accounting export rejected by customer ERP."
+  },
+  {
+    "id": "C015",
+    "date": "2026-06-09",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Olvidé mi contraseña.\nAgente: ¿Tu nombre y correo?\nCliente: Teresa Molina, teresa.molina@empresa-demo.test.\nAgente: Te envié el enlace de restablecimiento.\nCliente: Ya lo recibí. Gracias.",
+    "pii_values": [
+      "Teresa Molina",
+      "teresa.molina@empresa-demo.test"
+    ],
+    "expected_reason": "account_access",
+    "expected_sub_reason": null,
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Simple password reset, not a lockout."
+  },
+  {
+    "id": "C016",
+    "date": "2026-06-09",
+    "market": "BR",
+    "channel": "call",
+    "text": "Cliente: Es la tercera vez que llamo, mi tarjeta termina en 8820 y sigue inactiva en la plataforma.\nAgente: Entiendo, ¿tu nombre y cuenta?\nCliente: Fernanda Lima, LP-377264. Ayer me dijeron que esperara y no cambió nada.\nAgente: Reviso. En el procesador ya está activa desde ayer, falta refrescar el estado. Lo hago ahora.\nCliente: ¿Por qué nadie lo hizo ayer?\nAgente: Fue un error de seguimiento, me disculpo. Te escribimos al +55 21 98888-0177 cuando confirme.\nCliente: Ya la veo activa. Gracias.",
+    "pii_values": [
+      "Fernanda Lima",
+      "LP-377264",
+      "termina en 8820",
+      "+55 21 98888-0177"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "needs_status_refresh",
+    "expected_top_p": "people",
+    "expected_route": "review",
+    "design_note": "Agent previously told customer to wait instead of refreshing; repeat contact."
+  },
+  {
+    "id": "C017",
+    "date": "2026-06-09",
+    "market": "BR",
+    "channel": "whatsapp",
+    "text": "Cliente: minha compra de R$ 3.200,00 foi negada, cartao 5561\nAgente: Hola Camila Rocha, el cartão tiene un límite de R$ 2.500,00 por compra definido por tu empresa.\nCliente: nao tem nada na app sobre isso\nAgente: Es cierto, el límite no se muestra al usuario. Tu admin puede cambiarlo.\nCliente: ta bom vou pedir",
+    "pii_values": [
+      "Camila Rocha",
+      "R$ 3.200,00",
+      "5561"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "hidden_limit",
+    "expected_top_p": "policy",
+    "expected_route": "auto_tag",
+    "design_note": "WhatsApp, limit not visible, informal."
+  },
+  {
+    "id": "C018",
+    "date": "2026-06-10",
+    "market": "BR",
+    "channel": "whatsapp",
+    "text": "Cliente: oi, ativei o cartao e ta pendente ainda\nAgente: Hola, ¿es el cartão que termina en 6612?\nCliente: sim, termina en 6612\nAgente: Ok, el procesador tarda hasta 15 min. Te avisamos al +55 11 99999-0142 cuando se active.\nCliente: blz valeu",
+    "pii_values": [
+      "+55 11 99999-0142",
+      "termina en 6612"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "processor_delay",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Informal BR case, pending then solved without agent action."
+  },
+  {
+    "id": "C019",
+    "date": "2026-06-10",
+    "market": "MX",
+    "channel": "whatsapp",
+    "text": "Cliente: hola, soy Sergio Peña, como pongo limite de gasto por categoria?\nAgente: Hola Sergio, en Políticas, elige la categoría y define el monto máximo.\nCliente: ok y se aplica a todas las tarjetas?\nAgente: Sí, o puedes limitarlo por tarjeta en el perfil de cada una.\nCliente: gracias",
+    "pii_values": [
+      "Sergio Peña"
+    ],
+    "expected_reason": "how_to_policy",
+    "expected_sub_reason": null,
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "How to set a category limit."
+  },
+  {
+    "id": "C020",
+    "date": "2026-06-10",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: Mi pago de R$ 1.450,00 se cayó. Dice error pero la tarjeta funciona.\nAgente: ¿Tu nombre y cuenta?\nCliente: Aline Nogueira, LP-209846, termina en 4412.\nAgente: Hubo un timeout con el procesador en ese cobro. No se descontó.\nCliente: Entonces lo repito.\nAgente: Sí, puedes reintentarlo.",
+    "pii_values": [
+      "Aline Nogueira",
+      "LP-209846",
+      "termina en 4412",
+      "R$ 1.450,00"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "processor_timeout",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Timeout on a card payment at checkout."
+  },
+  {
+    "id": "C021",
+    "date": "2026-06-11",
+    "market": "MX",
+    "channel": "whatsapp",
+    "text": "Cliente: no me llega el sms de activación, pablo guzmán\nAgente: Hola Pablo, ¿tu tarjeta termina en?\nCliente: 7716\nAgente: Tu cuenta tiene registrado el +52 81 5550 0345. ¿Es correcto?\nCliente: no, mi admin puso mal el número\nAgente: Te lo corrijo si me das el correcto.\nCliente: es el mismo pero con un 6 al final\nAgente: Entendido, dame el número completo y lo actualizo.",
+    "pii_values": [
+      "pablo guzmán",
+      "+52 81 5550 0345",
+      "7716"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "wrong_phone",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "WhatsApp, wrong phone registered by admin."
+  },
+  {
+    "id": "C022",
+    "date": "2026-06-11",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Subí una factura de $5,680.00 MXN y no concilia.\nAgente: ¿Nombre y cuenta?\nCliente: Jorge Beltrán, LP-441009, RFC BEJJ790925XY7.\nAgente: El régimen fiscal del CFDI no coincide con el registrado en tu cuenta.\nCliente: ¿Cuál debo usar?\nAgente: El que figura en tu constancia fiscal. Corrígelo y concilia otra vez.",
+    "pii_values": [
+      "Jorge Beltrán",
+      "LP-441009",
+      "BEJJ790925XY7",
+      "$5,680.00 MXN"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "tax_fields",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "CFDI regimen fiscal mismatch."
+  },
+  {
+    "id": "C023",
+    "date": "2026-06-12",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Activé mi tarjeta hace 12 minutos y sigue pendiente, es urgente porque viajo hoy.\nAgente: Hola, ¿tu nombre completo y ID de cuenta?\nCliente: Luis Hernández Ortega, LP-557103.\nAgente: Gracias. Veo la activación en cola del procesador, el límite es de 15 minutos.\nCliente: ¿Puedo hacer algo para acelerarlo?\nAgente: No, es del lado del procesador. Te enviamos confirmación a luis.hernandez@empresa-demo.test.\nCliente: Está bien, espero tres minutos más.",
+    "pii_values": [
+      "Luis Hernández Ortega",
+      "LP-557103",
+      "luis.hernandez@empresa-demo.test"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "processor_delay",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Customer already waited 12 minutes, still within window."
+  },
+  {
+    "id": "C024",
+    "date": "2026-06-12",
+    "market": "MX",
+    "channel": "whatsapp",
+    "text": "Cliente: la activación falló en mi tarjeta, no pasa en gasolinera\nAgente: Hola Gabriela Núñez, ¿qué terminación?\nCliente: 6329\nAgente: La tarjeta está activa. El rechazo es porque la categoría gasolineras está bloqueada por tu admin.\nCliente: ah, no sabía\nAgente: Habla con tu admin para que la habilite.",
+    "pii_values": [
+      "Gabriela Núñez",
+      "6329"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "admin_category_block",
+    "expected_top_p": "process",
+    "expected_route": "review",
+    "design_note": "TRAP: says activation failed, really category block on active card."
+  },
+  {
+    "id": "C025",
+    "date": "2026-06-13",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Soy admin, activé 5 tarjetas del equipo y una sigue inactiva. Termina en 4412.\nAgente: ¿Tu nombre y cuenta?\nCliente: Diego Navarro, LP-480336, correo diego.navarro@empresa-demo.test.\nAgente: Las otras cuatro sincronizaron bien. La 4412 necesita refresh de estado manual. Lo ejecuto.\nCliente: ¿Esto va a pasar siempre?\nAgente: A veces. Ya está activa, revisa por favor.\nCliente: Confirmado, ya sale activa.",
+    "pii_values": [
+      "Diego Navarro",
+      "LP-480336",
+      "diego.navarro@empresa-demo.test",
+      "Termina en 4412"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "needs_status_refresh",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Admin activated for team, one card stuck in inactive."
+  },
+  {
+    "id": "C026",
+    "date": "2026-06-13",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: El gasto de $24,100.00 MXN aparece en mayo pero la factura es de junio.\nAgente: ¿Tu nombre y cuenta?\nCliente: Raúl Domínguez, LP-770914.\nAgente: El procesador liquidó el cobro en mayo y la factura es de junio. Es un desfase de tiempos.\nCliente: ¿Cómo lo concilio?\nAgente: Asócialos manualmente y quedará conciliado.",
+    "pii_values": [
+      "Raúl Domínguez",
+      "LP-770914",
+      "$24,100.00 MXN"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "timing_mismatch",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Charge posted next month in processor."
+  },
+  {
+    "id": "C027",
+    "date": "2026-06-14",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: ¿Cómo subo un recibo a un gasto?\nAgente: ¿Tu nombre y cuenta?\nCliente: Laura Montoya, LP-445871.\nAgente: En el gasto, toca adjuntar y toma foto o sube el archivo.\nCliente: Ya lo vi. Gracias.",
+    "pii_values": [
+      "Laura Montoya",
+      "LP-445871"
+    ],
+    "expected_reason": "how_to_policy",
+    "expected_sub_reason": null,
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "How to upload receipts for expenses."
+  },
+  {
+    "id": "C028",
+    "date": "2026-06-14",
+    "market": "CO",
+    "channel": "chat",
+    "text": "Cliente: Me rechazaron un pago de $4.200.000 COP con la tarjeta que termina en 9902.\nAgente: ¿Tu nombre y cuenta?\nCliente: Santiago Vargas, LP-339820.\nAgente: Tu tarjeta alcanzó el tope mensual definido por tu empresa. Ese tope no aparece en tu app.\nCliente: ¿Y cómo lo iba a saber?\nAgente: Solo lo ve el admin. Le puedes pedir ampliarlo.",
+    "pii_values": [
+      "Santiago Vargas",
+      "LP-339820",
+      "$4.200.000 COP",
+      "termina en 9902"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "hidden_limit",
+    "expected_top_p": "policy",
+    "expected_route": "auto_tag",
+    "design_note": "Monthly cap reached, user unaware."
+  },
+  {
+    "id": "C029",
+    "date": "2026-06-15",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: Hola, tengo otra tarjeta nueva y también se queda en pendiente.\nAgente: ¿Tu nombre y cuenta, por favor?\nCliente: Beatriz Almeida, LP-441927. La tarjeta termina en 1038.\nAgente: Veo que activaste hace 6 minutos. Es el tiempo normal del procesador, hasta 15 minutos.\nCliente: Con la primera pasó lo mismo y se activó sola.\nAgente: Exacto, esta también se activará sola.",
+    "pii_values": [
+      "Beatriz Almeida",
+      "LP-441927",
+      "termina en 1038"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "processor_delay",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Pending status, second card for same user."
+  },
+  {
+    "id": "C030",
+    "date": "2026-06-15",
+    "market": "CO",
+    "channel": "chat",
+    "text": "Cliente: Mi factura electrónica por $2.340.000 COP no se concilia.\nAgente: ¿Tu nombre y cuenta?\nCliente: Daniela Cardona, LP-558201.\nAgente: El NIT del proveedor aparece sin dígito de verificación. NIT 900.123.456-7 completo debe estar en la factura.\nCliente: Se lo pido al proveedor entonces.\nAgente: Sí, o corrígelo manualmente en el campo.",
+    "pii_values": [
+      "Daniela Cardona",
+      "LP-558201",
+      "900.123.456-7",
+      "$2.340.000 COP"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "tax_fields",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "NIT check digit missing on invoice."
+  },
+  {
+    "id": "C031",
+    "date": "2026-06-15",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: Me aparecen dos cobros iguales de R$ 640,00 después de actualizar la app.\nAgente: ¿Nombre y cuenta?\nCliente: Bruno Machado, LP-445019, tarjeta termina en 7720.\nAgente: Veo los dos cobros con el mismo comercio y hora.\nCliente: Antes de actualizar la app no pasaba.\nAgente: Lo reporto a producto como posible duplicado.",
+    "pii_values": [
+      "Bruno Machado",
+      "LP-445019",
+      "termina en 7720",
+      "R$ 640,00"
+    ],
+    "expected_reason": "unknown",
+    "expected_sub_reason": null,
+    "expected_top_p": "product",
+    "expected_route": "emerging",
+    "design_note": "Duplicate charges after app update."
+  },
+  {
+    "id": "C032",
+    "date": "2026-06-16",
+    "market": "MX",
+    "channel": "call",
+    "text": "Cliente: Soy Andrea Salgado, cuenta LP-702248. El código de activación no llega.\nAgente: ¿Con qué terminación es la tarjeta?\nCliente: Termina en 5128.\nAgente: El teléfono registrado es +52 33 5550 0611, con un dígito distinto al tuyo.\nCliente: Sí, el registro estuvo mal desde que me dieron de alta.\nAgente: Lo corrijo y reenvío el código ahora.",
+    "pii_values": [
+      "Andrea Salgado",
+      "LP-702248",
+      "+52 33 5550 0611",
+      "Termina en 5128"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "wrong_phone",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Call, phone with typo from onboarding."
+  },
+  {
+    "id": "C033",
+    "date": "2026-06-16",
+    "market": "CO",
+    "channel": "chat",
+    "text": "Cliente: Dice que la activación falló, intenté pagar un hotel y nada.\nAgente: ¿Tu nombre y cuenta?\nCliente: Natalia Giraldo, LP-770316, termina en 1850.\nAgente: Tu tarjeta está activa. Tu admin bloqueó la categoría hospedaje, por eso se rechazó el cobro de $1.850.000 COP.\nCliente: Nadie me avisó del bloqueo.\nAgente: El admin debe habilitarla, te explico cómo contactarlo.",
+    "pii_values": [
+      "Natalia Giraldo",
+      "LP-770316",
+      "termina en 1850",
+      "$1.850.000 COP"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "admin_category_block",
+    "expected_top_p": "process",
+    "expected_route": "review",
+    "design_note": "TRAP: activation failed claim, actually blocked travel category."
+  },
+  {
+    "id": "C034",
+    "date": "2026-06-17",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: Cambié de celular y no puedo usar mi autenticador.\nAgente: ¿Tu nombre y cuenta?\nCliente: Henrique Castro, LP-445318.\nAgente: Te mando un código a tu teléfono registrado, +55 11 98888-0321.\nCliente: Sí es ese, ya me llegó.\nAgente: Perfecto, ya puedes registrar el nuevo dispositivo.",
+    "pii_values": [
+      "Henrique Castro",
+      "LP-445318",
+      "+55 11 98888-0321"
+    ],
+    "expected_reason": "account_access",
+    "expected_sub_reason": null,
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "MFA device change, standard verification."
+  },
+  {
+    "id": "C035",
+    "date": "2026-06-17",
+    "market": "CO",
+    "channel": "chat",
+    "text": "Cliente: Mi tarjeta virtual aparece inactiva pero en el correo dice activada.\nAgente: ¿Nombre y cuenta, por favor?\nCliente: Valentina Ospina, LP-512907, termina en 6071.\nAgente: Está activa en el procesador. Actualizo el estado en tu cuenta ahora mismo.\nCliente: Ya se ve activa, gracias.",
+    "pii_values": [
+      "Valentina Ospina",
+      "LP-512907",
+      "termina en 6071"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "needs_status_refresh",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Colombian admin, inactive display after processor confirmation."
+  },
+  {
+    "id": "C036",
+    "date": "2026-06-17",
+    "market": "BR",
+    "channel": "call",
+    "text": "Cliente: Gasté R$ 480,00 de mi bolsillo, ¿cómo me reembolsan?\nAgente: ¿Nombre y cuenta?\nCliente: Rodrigo Pinto, LP-228109.\nAgente: Eso depende de la política de tu empresa, no de LumenPay.\nCliente: Pero ¿se puede hacer por la plataforma?\nAgente: Hay una función de reembolso si tu admin la activó. Pregúntale.",
+    "pii_values": [
+      "Rodrigo Pinto",
+      "LP-228109",
+      "R$ 480,00"
+    ],
+    "expected_reason": "how_to_policy",
+    "expected_sub_reason": null,
+    "expected_top_p": "policy",
+    "expected_route": "review",
+    "design_note": "Asks about reimbursement policy that is company specific, ambiguous."
+  },
+  {
+    "id": "C037",
+    "date": "2026-06-18",
+    "market": "MX",
+    "channel": "call",
+    "text": "Cliente: Buenas tardes, soy Mariana Torres, cuenta LP-662015. Mi tarjeta aparece pendiente.\nAgente: Hola Mariana, ¿qué terminación tiene?\nCliente: Termina en 9054.\nAgente: La activación se envió hace 4 minutos. El procesador puede tardar hasta 15.\nCliente: ¿Entonces no necesito hacer nada?\nAgente: Correcto, solo esperar. Si pasa de 15 minutos, vuelve a llamar.",
+    "pii_values": [
+      "Mariana Torres",
+      "LP-662015",
+      "Termina en 9054"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "processor_delay",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Phone call, pending state, customer calm."
+  },
+  {
+    "id": "C038",
+    "date": "2026-06-18",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: La factura de R$ 6.730,00 no concilia, falta un campo de la nota fiscal.\nAgente: ¿Nombre y cuenta?\nCliente: Vinícius Araújo, LP-667310, CPF 111.222.333-44.\nAgente: La clave de acceso de la NF-e no se leyó. Falta ese campo para emparejar.\nCliente: ¿Dónde lo agrego?\nAgente: En el detalle del gasto, campo clave de acceso.",
+    "pii_values": [
+      "Vinícius Araújo",
+      "LP-667310",
+      "111.222.333-44",
+      "R$ 6.730,00"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "tax_fields",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "NF-e key field not parsed."
+  },
+  {
+    "id": "C039",
+    "date": "2026-06-19",
+    "market": "BR",
+    "channel": "whatsapp",
+    "text": "Cliente: oi, quero saber o preco para contratar mais cartoes\nAgente: Hola Débora Vieira, este canal es soporte. Ventas te atiende en el formulario del sitio.\nCliente: ah ok\nAgente: Gracias.",
+    "pii_values": [
+      "Débora Vieira"
+    ],
+    "expected_reason": "other",
+    "expected_sub_reason": null,
+    "expected_top_p": "people",
+    "expected_route": "auto_tag",
+    "design_note": "Wrong channel, sales question."
+  },
+  {
+    "id": "C040",
+    "date": "2026-06-19",
+    "market": "BR",
+    "channel": "call",
+    "text": "Cliente: Ya llamé la semana pasada por esto. Mi pago de R$ 7.800,00 fue rechazado otra vez.\nAgente: ¿Nombre y cuenta?\nCliente: Patrícia Gomes, LP-448215, tarjeta termina en 4419, empresa CNPJ 12.345.678/0001-90.\nAgente: Veo un límite por transacción que no cambió. Tu admin debe subirlo, la semana pasada solo se informó.\nCliente: Me dijeron que lo subían.\nAgente: No hay cambio registrado. Te explico cómo pedírselo al admin.\nCliente: Qué lío, ok.",
+    "pii_values": [
+      "Patrícia Gomes",
+      "LP-448215",
+      "termina en 4419",
+      "R$ 7.800,00",
+      "12.345.678/0001-90"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "hidden_limit",
+    "expected_top_p": "policy",
+    "expected_route": "review",
+    "design_note": "Repeat contact, customer says limit was already raised."
+  },
+  {
+    "id": "C041",
+    "date": "2026-06-19",
+    "market": "CO",
+    "channel": "chat",
+    "text": "Cliente: La factura electrónica nueva no entra, dice campo no válido.\nAgente: ¿Nombre y cuenta?\nCliente: Mateo Londoño, LP-338901, NIT 901.222.333-4.\nAgente: Parece un campo nuevo de la DIAN que la plataforma aún no reconoce.\nCliente: Es de esta semana, cambió la regulación.\nAgente: Lo escalo para revisión de producto.",
+    "pii_values": [
+      "Mateo Londoño",
+      "LP-338901",
+      "901.222.333-4"
+    ],
+    "expected_reason": "unknown",
+    "expected_sub_reason": null,
+    "expected_top_p": "policy",
+    "expected_route": "emerging",
+    "design_note": "New tax field rejected after regulatory change."
+  },
+  {
+    "id": "C042",
+    "date": "2026-06-20",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: El código para activar no me llega. Soy Gustavo Pereira, LP-815530.\nAgente: Veo que el código fue al +55 31 97777-0456. ¿Es tuyo?\nCliente: Ese lo cambié hace meses. Ahora es +55 31 96666-0210.\nAgente: Actualizo tu teléfono y reenvío el código.\nCliente: Perfecto, ya llegó.",
+    "pii_values": [
+      "Gustavo Pereira",
+      "LP-815530",
+      "+55 31 97777-0456",
+      "+55 31 96666-0210"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "wrong_phone",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Brazilian cardholder, code sent to previous phone."
+  },
+  {
+    "id": "C043",
+    "date": "2026-06-20",
+    "market": "BR",
+    "channel": "call",
+    "text": "Cliente: Ya llamé antes y me dijeron que se concilia solo, pero no. R$ 9.150,00 siguen pendientes.\nAgente: ¿Nombre y cuenta?\nCliente: Cláudia Moreira, LP-330647.\nAgente: El cobro y la factura caen en períodos distintos. No se concilia solo, hay que asociar manual.\nCliente: ¿Por qué me dijeron otra cosa?\nAgente: Fue información incorrecta, perdón. Te mando los pasos al +55 41 95555-0188.",
+    "pii_values": [
+      "Cláudia Moreira",
+      "LP-330647",
+      "R$ 9.150,00",
+      "+55 41 95555-0188"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "timing_mismatch",
+    "expected_top_p": "process",
+    "expected_route": "review",
+    "design_note": "Repeat contact, timing mismatch not resolved before."
+  },
+  {
+    "id": "C044",
+    "date": "2026-06-21",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: El archivo de exportación con R$ 15.400,00 total fue rechazado por el ERP.\nAgente: ¿Nombre y cuenta?\nCliente: Isabela Campos, LP-993205.\nAgente: El orden de columnas no coincide con la plantilla estándar. Usa la exportación para contabilidad en lugar de la general.\nCliente: Ahora sí lo aceptó.",
+    "pii_values": [
+      "Isabela Campos",
+      "LP-993205",
+      "R$ 15.400,00"
+    ],
+    "expected_reason": "invoice_reconciliation",
+    "expected_sub_reason": "export_format",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Export column order rejected by ERP."
+  },
+  {
+    "id": "C045",
+    "date": "2026-06-21",
+    "market": "BR",
+    "channel": "call",
+    "text": "Cliente: Mi tarjeta fue negada para pagar una suscripción de R$ 890,00.\nAgente: ¿Tu nombre y cuenta?\nCliente: Ricardo Barbosa, LP-883125, termina en 3098.\nAgente: La categoría software está bloqueada por tu admin.\nCliente: ¿Y desde cuándo?\nAgente: Desde el lunes. Tu admin puede cambiarlo.",
+    "pii_values": [
+      "Ricardo Barbosa",
+      "LP-883125",
+      "termina en 3098",
+      "R$ 890,00"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "admin_category_block",
+    "expected_top_p": "policy",
+    "expected_route": "auto_tag",
+    "design_note": "Software subscriptions category blocked by admin policy."
+  },
+  {
+    "id": "C046",
+    "date": "2026-06-22",
+    "market": "BR",
+    "channel": "whatsapp",
+    "text": "Cliente: oi thiago aqui, cartao pendente\nAgente: Hola Thiago Ferreira, ¿qué terminación?\nCliente: 3345\nAgente: Termina en 3345, vi la solicitud. Espera hasta 15 min, el procesador confirma solo.\nCliente: ok obg",
+    "pii_values": [
+      "Thiago Ferreira",
+      "Termina en 3345"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "processor_delay",
+    "expected_top_p": "product",
+    "expected_route": "auto_tag",
+    "design_note": "Short informal exchange, pending state."
+  },
+  {
+    "id": "C047",
+    "date": "2026-06-22",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Ya pregunté antes cómo cambiar el flujo de aprobación y no funcionó lo que me dijeron.\nAgente: ¿Tu nombre y cuenta?\nCliente: Natalia Flores, LP-559120.\nAgente: Los pasos correctos son: Configuración, Aprobaciones, editar flujo.\nCliente: Antes me dijeron otra ruta, por eso no encontraba nada.\nAgente: Fue un error mío en la explicación anterior, disculpa. Ahora sí.",
+    "pii_values": [
+      "Natalia Flores",
+      "LP-559120"
+    ],
+    "expected_reason": "how_to_policy",
+    "expected_sub_reason": null,
+    "expected_top_p": "people",
+    "expected_route": "auto_tag",
+    "design_note": "Repeat contact, how to change approval flow, earlier agent gave wrong steps."
+  },
+  {
+    "id": "C048",
+    "date": "2026-06-23",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: La activación falló, mi tarjeta no funciona. Termina en 2087.\nAgente: ¿Tu nombre y cuenta?\nCliente: Eduardo Paredes, LP-551670.\nAgente: La tarjeta está activa desde hace dos semanas. ¿Qué pasó al pagar?\nCliente: En una tienda me la rechazaron, $9,400.00 MXN.\nAgente: Es un rechazo, no un fallo de activación. El monto superó tu límite por transacción.\nCliente: Ah, no sabía que tenía límite.",
+    "pii_values": [
+      "Eduardo Paredes",
+      "LP-551670",
+      "Termina en 2087",
+      "$9,400.00 MXN"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "hidden_limit",
+    "expected_top_p": "policy",
+    "expected_route": "review",
+    "design_note": "TRAP: customer says activation failed but card is active and hit hidden limit."
+  },
+  {
+    "id": "C049",
+    "date": "2026-06-23",
+    "market": "MX",
+    "channel": "whatsapp",
+    "text": "Cliente: me cobraron doble $2,150.00 MXN, desde que actualicé la app\nAgente: Hola Ana Lucía Ibarra, ¿qué terminación?\nCliente: termina en 3314\nAgente: Veo dos cargos idénticos en el mismo segundo.\nCliente: a otro compañero le pasó igual\nAgente: Lo mando a producto, gracias por avisar.",
+    "pii_values": [
+      "Ana Lucía Ibarra",
+      "termina en 3314",
+      "$2,150.00 MXN"
+    ],
+    "expected_reason": "unknown",
+    "expected_sub_reason": null,
+    "expected_top_p": "product",
+    "expected_route": "emerging",
+    "design_note": "Another duplicate after app update, WhatsApp."
+  },
+  {
+    "id": "C050",
+    "date": "2026-06-24",
+    "market": "BR",
+    "channel": "whatsapp",
+    "text": "Cliente: marcelo dias, cartao termina en 2750 aparece inativo mas ja recebi confirmacao\nAgente: Hola Marcelo, vi que ya está activo en el procesador. Le hago refresh.\nCliente: ok\nAgente: Listo, revisa ahora.\nCliente: ya aparece ativo valeu",
+    "pii_values": [
+      "marcelo dias",
+      "termina en 2750"
+    ],
+    "expected_reason": "card_activation",
+    "expected_sub_reason": "needs_status_refresh",
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Informal, refresh solves it quickly."
+  },
+  {
+    "id": "C051",
+    "date": "2026-06-24",
+    "market": "CO",
+    "channel": "chat",
+    "text": "Cliente: Necesito copia de mi contrato con LumenPay.\nAgente: ¿Tu nombre y cuenta?\nCliente: Felipe Zapata, LP-668302, NIT 900.456.789-1.\nAgente: Eso lo gestiona tu ejecutivo de cuenta, no soporte.\nCliente: Entiendo, le escribo.",
+    "pii_values": [
+      "Felipe Zapata",
+      "900.456.789-1",
+      "LP-668302"
+    ],
+    "expected_reason": "other",
+    "expected_sub_reason": null,
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "Asks for contract document, not support scope."
+  },
+  {
+    "id": "C052",
+    "date": "2026-06-25",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: ¿Cómo congelo una tarjeta?\nAgente: ¿Nombre y cuenta?\nCliente: Tatiane Silva, LP-337260, la que termina en 6620.\nAgente: En la tarjeta, toca congelar. Puedes descongelarla cuando quieras.\nCliente: Listo, gracias.",
+    "pii_values": [
+      "Tatiane Silva",
+      "LP-337260",
+      "termina en 6620"
+    ],
+    "expected_reason": "how_to_policy",
+    "expected_sub_reason": null,
+    "expected_top_p": "process",
+    "expected_route": "auto_tag",
+    "design_note": "How to freeze a card."
+  },
+  {
+    "id": "C053",
+    "date": "2026-06-25",
+    "market": "MX",
+    "channel": "whatsapp",
+    "text": "Cliente: a ativação falhou, cartão 9971 não passa\nAgente: Hola Lucas Teixeira, la tarjeta ya estaba activa desde ayer.\nCliente: mas deu erro na compra\nAgente: Veo un timeout del procesador en el intento. No es un fallo de activación.\nCliente: tenta de novo e passa?\nAgente: Sí, reintenta.",
+    "pii_values": [
+      "Lucas Teixeira",
+      "9971"
+    ],
+    "expected_reason": "payment_declined",
+    "expected_sub_reason": "processor_timeout",
+    "expected_top_p": "product",
+    "expected_route": "review",
+    "design_note": "TRAP: says activation failed, but active card hit processor timeout."
+  },
+  {
+    "id": "C054",
+    "date": "2026-06-26",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Tengo cargos de $8,760.00 MXN y $3,200.00 MXN de un comercio que no conozco.\nAgente: ¿Tu nombre y cuenta?\nCliente: Cristian Barrera, LP-889154, tarjeta termina en 4043.\nAgente: Los cargos son de un comercio en otro país. ¿Tienes la tarjeta contigo?\nCliente: Sí, nunca la presté.\nAgente: Congelo la tarjeta y escalo a fraude para investigar.",
+    "pii_values": [
+      "Cristian Barrera",
+      "LP-889154",
+      "termina en 4043",
+      "$8,760.00 MXN",
+      "$3,200.00 MXN"
+    ],
+    "expected_reason": "unknown",
+    "expected_sub_reason": null,
+    "expected_top_p": "process",
+    "expected_route": "human_led",
+    "design_note": "Unrecognized merchant charges, possible fraud."
+  },
+  {
+    "id": "C055",
+    "date": "2026-06-27",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: La app se cierra cuando subo la foto de un recibo.\nAgente: ¿Nombre y cuenta?\nCliente: Larissa Duarte, LP-558723.\nAgente: ¿Android o iPhone?\nCliente: iPhone, desde ayer.\nAgente: Es la primera vez que lo veo. Lo reporto como error nuevo.",
+    "pii_values": [
+      "Larissa Duarte",
+      "LP-558723"
+    ],
+    "expected_reason": "unknown",
+    "expected_sub_reason": null,
+    "expected_top_p": "product",
+    "expected_route": "emerging",
+    "design_note": "Receipt photo upload crashes in app."
+  },
+  {
+    "id": "C056",
+    "date": "2026-06-28",
+    "market": "MX",
+    "channel": "chat",
+    "text": "Cliente: Mi cuenta está bloqueada, no puedo entrar desde esta mañana.\nAgente: ¿Tu nombre y cuenta?\nCliente: Omar Quintero, LP-114920, correo omar.quintero@empresa-demo.test.\nAgente: La cuenta se bloqueó por varios intentos fallidos.\nCliente: No intenté tantas veces, solo dos.\nAgente: Lo escalo a seguridad, ellos revisan y desbloquean.",
+    "pii_values": [
+      "Omar Quintero",
+      "LP-114920",
+      "omar.quintero@empresa-demo.test"
+    ],
+    "expected_reason": "account_access",
+    "expected_sub_reason": null,
+    "expected_top_p": "policy",
+    "expected_route": "human_led",
+    "design_note": "Lockout after repeated failed logins."
+  },
+  {
+    "id": "C057",
+    "date": "2026-06-28",
+    "market": "BR",
+    "channel": "whatsapp",
+    "text": "Cliente: minha conta ta bloqueada nao consigo entrar\nAgente: Hola Priscila Santos, ¿tu cuenta?\nCliente: lumenpay do meu email, nao sei o numero\nAgente: Veo bloqueo por seguridad. Te contactará el equipo al +55 21 97777-0099.\nCliente: ta, urgente pq tenho que aprovar pagamentos",
+    "pii_values": [
+      "Priscila Santos",
+      "+55 21 97777-0099"
+    ],
+    "expected_reason": "account_access",
+    "expected_sub_reason": null,
+    "expected_top_p": "policy",
+    "expected_route": "human_led",
+    "design_note": "Lockout, informal WhatsApp."
+  },
+  {
+    "id": "C058",
+    "date": "2026-06-29",
+    "market": "CO",
+    "channel": "chat",
+    "text": "Cliente: Me bloquearon la cuenta y vi un correo de ingreso desde otro país. No fui yo.\nAgente: ¿Tu nombre y cuenta?\nCliente: Juan Esteban Mejía, LP-228731.\nAgente: Veo un inicio de sesión desde una ubicación inusual. Bloqueamos por seguridad.\nCliente: Aprobaron un pago de $7.900.000 COP que no reconozco.\nAgente: Escalo ahora a seguridad. Un especialista te llamará.",
+    "pii_values": [
+      "Juan Esteban Mejía",
+      "LP-228731",
+      "$7.900.000 COP"
+    ],
+    "expected_reason": "account_access",
+    "expected_sub_reason": null,
+    "expected_top_p": "policy",
+    "expected_route": "human_led",
+    "design_note": "Possible account takeover: login from unknown country."
+  },
+  {
+    "id": "C059",
+    "date": "2026-06-29",
+    "market": "MX",
+    "channel": "call",
+    "text": "Cliente: Soy admin y mi cuenta se bloqueó. Alguien intentó cambiar mi contraseña varias veces.\nAgente: ¿Tu nombre y cuenta?\nCliente: Claudia Rivas, LP-305516, RFC de la empresa RIVC880214QZ3.\nAgente: Veo múltiples solicitudes de restablecimiento. Es posible que alguien más lo intente.\nCliente: ¿Pueden bloquear todo hasta que se aclare?\nAgente: Escalo a seguridad, te contactarán al +52 55 5550 0721.",
+    "pii_values": [
+      "Claudia Rivas",
+      "LP-305516",
+      "RIVC880214QZ3",
+      "+52 55 5550 0721"
+    ],
+    "expected_reason": "account_access",
+    "expected_sub_reason": null,
+    "expected_top_p": "policy",
+    "expected_route": "human_led",
+    "design_note": "Lockout with possible fraud attempt, admin account."
+  },
+  {
+    "id": "C060",
+    "date": "2026-06-30",
+    "market": "BR",
+    "channel": "chat",
+    "text": "Cliente: Ya escribí ayer, mi cuenta sigue bloqueada, no hay respuesta.\nAgente: ¿Tu nombre y cuenta?\nCliente: Eduardo Lopes, LP-771039, correo eduardo.lopes@empresa-demo.test.\nAgente: Veo el caso abierto con seguridad, aún pendiente.\nCliente: Necesito aprobar facturas hoy, es fin de mes.\nAgente: Lo marco como urgente con el equipo de seguridad.",
+    "pii_values": [
+      "Eduardo Lopes",
+      "LP-771039",
+      "eduardo.lopes@empresa-demo.test"
+    ],
+    "expected_reason": "account_access",
+    "expected_sub_reason": null,
+    "expected_top_p": "policy",
+    "expected_route": "human_led",
+    "design_note": "Lockout, third in the spike, repeated contact."
+  }
+]
