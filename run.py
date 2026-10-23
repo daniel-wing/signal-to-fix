@@ -221,7 +221,8 @@ def serve():
         except Exception:
             pass
     else:
-        print(f"Headless machine. From your laptop: ssh -L {port}:localhost:{port} <this-host>, then open {url}")
+        print(f"Headless machine. From your laptop: ssh -L 8765:localhost:{port} <this-host>, "
+              "then open http://localhost:8765 (any free laptop port works)")
     ThreadingHTTPServer((host, port), Handler).serve_forever()
 
 
