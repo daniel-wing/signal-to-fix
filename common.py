@@ -46,7 +46,7 @@ def normalize(text):
 
 def ollama_generate(cfg, prompt, json_format=True):
     """Call the local Ollama model. Returns the response text."""
-    body = {"model": cfg["ollama"]["model"], "prompt": prompt, "stream": False,
+    body = {"model": cfg["ollama"]["model"], "prompt": prompt, "stream": False, "keep_alive": "30m",
             "options": {"temperature": 0}}
     if json_format:
         body["format"] = "json"
