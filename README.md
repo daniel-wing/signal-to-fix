@@ -71,6 +71,18 @@ Other commands:
 
 On the page, upload `cases_raw.json` (or any file in the same shape). Paste-ready single cases for `run.py --only` style demos are in `demo_cases.md`. Open questions and later work are in `TODO.md`.
 
+## Publishing for a few test users (Tailscale Funnel)
+
+Testers need only a link and a password, not Tailscale.
+
+1. Put a shared password in `.env` (git-ignored): `UPSTREAMW_PASSWORD=...`. With it set, the browser asks for a login; any user name works. Without it the page is open to anyone with the link.
+2. Keep the page running after SSH closes:
+   `tmux new -d -s upstreamw 'cd ~/projects/signal-to-fix && .venv/bin/python run.py serve'`
+3. Publish it: `tailscale funnel --bg --https=10000 http://127.0.0.1:8000`. The link is `https://zbook-server.tail8311fb.ts.net:10000`. Port 10000 because 443 and 8443 are taken on this machine. The first time, Tailscale may print a link to allow Funnel for this machine in the admin console.
+4. Take it down: `tailscale funnel --https=10000 off`, and stop the page with `tmux kill-session -t upstreamw`.
+
+All testers share one app: the same last analysis, one analysis at a time, on this machine's Claude Code login.
+
 ## Changing things live
 
 `config.yaml` and `prompt.txt` are read again on every run, including every "Run live" click on the page. No restart needed.

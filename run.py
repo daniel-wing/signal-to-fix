@@ -14,7 +14,7 @@ import time
 from datetime import datetime
 
 from classify import ClassificationUnavailable, available, call_llm, classify
-from common import ROOT, api_key, load_config, ollama_models, path
+from common import ROOT, api_key, load_config, load_env, ollama_models, path
 from mask import case_text, leak_check, mask, save_vault
 from route import route
 
@@ -275,7 +275,31 @@ def serve(port=None):
         except Exception as e:
             job.update(phase="failed", error=f"{type(e).__name__}: {e}")
 
+    # Shared password for test users (UPSTREAMW_PASSWORD in .env). Without it the page is open,
+    # which is fine on 127.0.0.1 but not once the page is published with Tailscale Funnel.
+    load_env()
+    password = os.environ.get("UPSTREAMW_PASSWORD", "")
+
     class Handler(BaseHTTPRequestHandler):
+        def allowed(self):
+            """Browser login box: any user name, the shared password."""
+            if not password:
+                return True
+            import base64
+            import hmac
+            given = self.headers.get("Authorization", "")
+            try:
+                _, _, pw = base64.b64decode(given.removeprefix("Basic ")).decode().partition(":")
+            except ValueError:
+                pw = ""
+            if given.startswith("Basic ") and hmac.compare_digest(pw.encode(), password.encode()):
+                return True
+            self.send_response(401)
+            self.send_header("WWW-Authenticate", 'Basic realm="UpstreamW", charset="UTF-8"')
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return False
+
         def send(self, code, body, ctype="application/json"):
             data = body if isinstance(body, bytes) else json.dumps(body, ensure_ascii=False).encode()
             self.send_response(code)
@@ -286,6 +310,8 @@ def serve(port=None):
             self.wfile.write(data)
 
         def do_GET(self):
+            if not self.allowed():
+                return
             route_path, _, query = self.path.partition("?")
             if route_path in ("/", "/index.html"):
                 self.send(200, (ROOT / "app.html").read_bytes(), "text/html")
@@ -306,6 +332,8 @@ def serve(port=None):
                 self.send(404, {"error": "not found"})
 
         def do_POST(self):
+            if not self.allowed():
+                return
             route_path, _, query = self.path.partition("?")
             if route_path == "/api/stop":
                 job = jobs.get(query.removeprefix("id="))
@@ -336,6 +364,7 @@ def serve(port=None):
     host, port = cfg["server"]["host"], port or cfg["server"]["port"]
     url = f"http://localhost:{port}"
     print(f"Serving {url}  (Ctrl+C to stop)")
+    print("Password: on (UPSTREAMW_PASSWORD in .env)" if password else "Password: off (set UPSTREAMW_PASSWORD in .env before publishing)")
     if os.environ.get("DISPLAY") or sys.platform == "darwin":
         try:
             webbrowser.open(url)
