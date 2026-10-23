@@ -28,10 +28,22 @@ def call_llm(cfg, system, user):
     return call_api(cfg, system, user)
 
 
+def cli_path(cfg):
+    """The Claude Code command, also found when started without a login shell (e.g. over ssh)."""
+    from pathlib import Path
+    from shutil import which
+    cli = cfg["llm"]["cli"]
+    found = which(cli)
+    if not found and "/" not in cli:
+        local = Path.home() / ".local" / "bin" / cli
+        found = str(local) if local.exists() else None
+    return found
+
+
 def call_claude_code(cfg, system, user):
     """Headless Claude Code: our system prompt only, no tools, no settings, MCP or saved session."""
     llm = cfg["llm"]
-    cmd = [llm["cli"], "-p", "--model", llm["model"], "--system-prompt", system,
+    cmd = [cli_path(cfg) or llm["cli"], "-p", "--model", llm["model"], "--system-prompt", system,
            "--tools", "", "--output-format", "json", "--no-session-persistence",
            "--setting-sources", "", "--strict-mcp-config", "--effort", llm["effort"]]
     try:
@@ -53,8 +65,7 @@ def call_claude_code(cfg, system, user):
 def available(cfg):
     """Can a call be attempted at all? (key present, or the CLI exists)."""
     if cfg["llm"]["backend"] == "claude_code":
-        from shutil import which
-        return which(cfg["llm"]["cli"]) is not None
+        return cli_path(cfg) is not None
     return bool(api_key(cfg))
 
 
