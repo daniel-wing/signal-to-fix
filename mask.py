@@ -16,7 +16,7 @@ PATTERNS = [
     ("CPF", r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b"),
     ("NIT", r"\bNIT\s*(?:No\.?|#|:)?\s*\d[\d.\s]{6,}\d(?:\s*-\s*\d)?|\b\d{3}\.\d{3}\.\d{3}\s*-\s*\d\b"),
     ("RFC", r"\b[A-ZÑ&]{3,4}\d{6}[A-Z\d]{3}\b"),
-    ("CARD", r"\b(?:\d[ -]?){12,18}\d\b"),
+    ("CARD", r"(?<![+\d])\b(?:\d[ -]?){12,18}\d\b"),  # not after "+": that is a phone
     ("CARD_LAST4", r"(?:termina(?:da|do|cion|ción)?\s+(?:en\s+)?|terminación\s+|"
                    r"[uú]ltimos\s+(?:4|cuatro)\s+(?:d[ií]gitos\s+)?(?:son\s+|:\s*)?|"
                    r"final(?:iza)?\s+(?:en\s+)?|[*xX•]{2,}\s?)(\d{4})\b"),

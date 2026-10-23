@@ -4,240 +4,358 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Signal-to-Fix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f6f7f9; --card: #fff; --ink: #1d2433; --muted: #5d6779; --line: #dde1e8;
-    --accent: #2f5bd3; --human: #b3261e; --review: #a15c00; --emerging: #6b3fb5; --auto: #1e7a3c;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  .banner { background: #fff4d6; border-bottom: 1px solid #ecd9a0; padding: 8px 16px; font-weight: 600; text-align: center; }
-  header { padding: 18px 16px 4px; max-width: 1280px; margin: 0 auto; }
-  header h1 { margin: 0; font-size: 22px; }
-  header p { margin: 4px 0 0; color: var(--muted); }
-  main { max-width: 1280px; margin: 0 auto; padding: 8px 16px 48px; }
-  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-top: 16px; }
-  h2 { margin: 0 0 12px; font-size: 17px; }
-  h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-  textarea { width: 100%; min-height: 130px; font: 14px/1.4 ui-monospace, Menlo, monospace; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
-  button, select { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
-  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  button:disabled { opacity: .5; cursor: wait; }
-  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-  .muted { color: var(--muted); }
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  @media (max-width: 900px) { .grid3, .grid2, .grid4 { grid-template-columns: 1fr; } }
-  pre { white-space: pre-wrap; word-break: break-word; margin: 0; background: #f9fafb; border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: 13px/1.45 ui-monospace, Menlo, monospace; max-height: 340px; overflow: auto; }
-  .tok { background: #e6ecfb; color: var(--accent); border-radius: 4px; padding: 0 2px; }
-  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; color: #fff; font-weight: 600; font-size: 13px; }
-  .human_led { background: var(--human); } .review_queue { background: var(--review); }
-  .emerging { background: var(--emerging); } .auto_tag { background: var(--auto); }
-  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; }
-  .kv dt { color: var(--muted); } .kv dd { margin: 0; }
-  .bar { display: grid; grid-template-columns: 70px 1fr 44px; gap: 8px; align-items: center; margin: 6px 0 0; }
-  .bar .track { background: #eef0f4; border-radius: 4px; height: 12px; }
-  .bar .fill { background: var(--accent); height: 12px; border-radius: 4px; }
-  .quote { font-size: 13px; color: var(--muted); margin: 2px 0 6px 78px; font-style: italic; }
-  table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
-  th { color: var(--muted); font-weight: 600; }
-  td.num, th.num { text-align: right; }
-  tr.click { cursor: pointer; } tr.click:hover { background: #f1f4fb; }
-  .alert { color: var(--human); font-weight: 700; }
-  .pass { color: var(--auto); font-weight: 700; } .fail { color: var(--human); font-weight: 700; }
-  .err { color: var(--human); font-weight: 600; }
-  .stat { font-size: 26px; font-weight: 700; }
+:root{
+  --bg:#0d0e10;
+  --fg:#ecebe8;
+  --body:#c9c7c2;
+  --muted:#8b9099;
+  --faint:#5a5f67;
+  --line:#23262b;
+  --band1:#26292e;
+  --band2:#33373d;
+  --accent:#e2b56c;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--body); font: 400 15px/1.55 Inter, system-ui, sans-serif;
+       font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 48px 96px; }
+@media (max-width: 720px) { .wrap { padding: 0 16px 64px; } }
+
+/* Top of page */
+.top { display: flex; justify-content: space-between; align-items: baseline; padding: 32px 0 8px; gap: 16px; }
+.top h1 { margin: 0; font-size: 32px; font-weight: 600; color: var(--fg); letter-spacing: -0.02em; }
+.top .synthetic { font-size: 13px; color: var(--muted); }
+.lede { margin: 0; max-width: 760px; }
+.cfg { margin: 8px 0 0; font-size: 13px; color: var(--faint); }
+nav { margin: 24px 0 0; display: flex; gap: 24px; flex-wrap: wrap; }
+nav a { color: var(--muted); text-decoration: none; font-size: 13px; }
+nav a:hover { color: var(--fg); }
+
+/* Sections */
+section { margin-top: 64px; }
+.eyebrow { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 8px; }
+h2 { margin: 0 0 24px; font-size: 22px; font-weight: 600; color: var(--fg); }
+h3 { margin: 0 0 12px; font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.faint { color: var(--faint); }
+.fg { color: var(--fg); }
+.accent { color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 48px; }
+@media (max-width: 900px) { .grid2, .grid3 { grid-template-columns: 1fr; gap: 32px; } .stats { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
+.block { margin-top: 48px; }
+.fade { animation: fade 250ms ease-out; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Inputs and buttons */
+textarea, select { background: var(--band1); color: var(--body); border: none; border-radius: 3px; font: inherit; }
+textarea { width: 100%; min-height: 150px; padding: 12px 16px; font: 13px/1.6 var(--mono); resize: vertical; }
+select { padding: 10px 12px; font-size: 14px; }
+textarea:focus, select:focus, button:focus-visible { outline: 1px solid var(--accent); outline-offset: 0; }
+textarea::placeholder { color: var(--faint); }
+.controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.controls label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+button { font: 500 14px Inter, system-ui, sans-serif; border-radius: 3px; padding: 12px 20px; cursor: pointer; }
+button.primary { background: var(--fg); color: var(--bg); border: none; }
+button:disabled { opacity: 0.5; cursor: default; }
+.status { font-size: 13px; color: var(--muted); }
+
+/* Three-pane case view */
+.panes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pane { padding: 0 24px; border-left: 1px solid var(--line); }
+.pane:first-child { padding-left: 0; border-left: none; }
+.pane pre { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1.6 var(--mono); color: var(--body); }
+.pane .note { margin: -6px 0 12px; }
+.tok { color: var(--accent); }
+@media (max-width: 900px) { .panes { grid-template-columns: 1fr; } .pane { padding: 24px 0 0; border-left: none; border-top: 1px solid var(--line); margin-top: 24px; } .pane:first-child { border-top: none; margin-top: 0; padding-top: 0; } }
+.state { margin: 24px 0 0; font-size: 14px; }
+
+/* Key-value list */
+.kv { display: grid; grid-template-columns: max-content 1fr; margin: 0; }
+.kv dt, .kv dd { padding: 8px 0; border-bottom: 1px solid var(--line); margin: 0; }
+.kv dt { color: var(--muted); font-size: 13px; padding-right: 24px; }
+.kv dd { color: var(--body); overflow-wrap: anywhere; }
+.kv dd b { color: var(--fg); font-weight: 500; }
+
+/* Bars */
+.bar { display: grid; grid-template-columns: 72px 1fr 40px; gap: 12px; align-items: center; }
+.bar .name { color: var(--fg); font-size: 14px; }
+.bar .track { background: var(--band1); height: 8px; }
+.bar .fill { background: var(--band2); height: 8px; }
+.bar .fill.lead { background: var(--accent); }
+.bar .val { color: var(--fg); text-align: right; font-size: 14px; }
+.quote { margin: 4px 0 16px 84px; font-size: 13px; color: var(--muted); font-style: italic; }
+.prow { margin-bottom: 4px; }
+.prow + .prow { margin-top: 12px; }
+
+/* Route label */
+.route { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; }
+.r-auto_tag { color: var(--muted); }
+.r-review_queue, .r-emerging { color: var(--fg); }
+.r-human_led, .r-blocked { color: var(--accent); }
+ul.owners { list-style: none; padding: 0; margin: 12px 0 0; }
+ul.owners li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+
+/* Stats */
+.stat .num { font-size: 44px; font-weight: 600; color: var(--fg); letter-spacing: -0.03em; line-height: 1.1; }
+.stat .num.key { color: var(--accent); }
+.stat .num.text { font-size: 22px; line-height: 1.6; }
+.stat .lbl { font-size: 13px; color: var(--muted); margin-top: 4px; max-width: 220px; }
+
+/* Alerts */
+.alert { border-left: 2px solid var(--accent); padding: 4px 0 4px 16px; color: var(--accent); margin: 0 0 12px; }
+
+/* Tables */
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: left; padding: 0 12px 8px 0; border-bottom: 1px solid var(--line); }
+td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); color: var(--body); vertical-align: top; }
+td:first-child { color: var(--fg); }
+th.num, td.num { text-align: right; }
+td.barcell { width: 30%; }
+td.barcell .track { background: var(--band1); height: 8px; margin-top: 7px; }
+td.barcell .fill { background: var(--band2); height: 8px; }
+.tscroll { overflow-x: auto; }
+tr.click { cursor: pointer; }
+tr.click:hover td { color: var(--fg); }
 </style>
 </head>
 <body>
-<div class="banner">Synthetic data only. LumenPay is a fictional company.</div>
-<header>
-  <h1>Signal-to-Fix</h1>
-  <p>Support conversations masked on this machine, classified by a cloud model on masked text only, routed by rules you can edit in <code>config.yaml</code>.</p>
-  <p class="muted" id="cfgline"></p>
-</header>
-<main>
-  <section>
-    <h2>Try it</h2>
-    <textarea id="input" placeholder="Paste one support conversation in Spanish, for example:
-Cliente: Hola, soy Ana Ruiz. Emitimos tarjetas el viernes y siguen en pendiente..."></textarea>
-    <div class="row">
-      <button class="primary" id="runBtn">Run live</button>
-      <span class="muted">or view a case from the saved run:</span>
-      <select id="savedSel"><option value="">(no saved run)</option></select>
-      <span id="status" class="muted"></span>
+<div class="wrap">
+  <div class="top">
+    <h1>Signal-to-Fix</h1>
+    <span class="synthetic">Synthetic data only</span>
+  </div>
+  <p class="lede">Turns support conversations into contact reasons, root causes and specific cases to review. People make the decisions and the VOC proposal; this gives them faster answers and the evidence behind them.</p>
+  <p class="cfg" id="cfgline">Loading settings.</p>
+  <nav>
+    <a href="#try">Try it</a><a href="#case">Case detail</a><a href="#summary">Summary</a><a href="#evaluation">Evaluation</a>
+  </nav>
+
+  <section id="try">
+    <p class="eyebrow">Try it</p>
+    <h2>Run one conversation</h2>
+    <textarea id="input" placeholder="Paste one support conversation in Spanish.&#10;Cliente: Hola, activé mi tarjeta y sigue en pendiente..."></textarea>
+    <div class="controls">
+      <label for="market">Market</label>
+      <select id="market"><option value="">Not set</option><option>MX</option><option>BR</option><option>CO</option></select>
+      <label for="channel">Channel</label>
+      <select id="channel"><option value="">Not set</option><option>chat</option><option>whatsapp</option><option>call</option><option>email</option></select>
+      <button class="primary" id="runBtn">Run</button>
+      <span class="status" id="status"></span>
+    </div>
+    <div class="controls">
+      <label for="savedSel">Or open a saved case</label>
+      <select id="savedSel"><option value="">No saved run</option></select>
     </div>
   </section>
 
-  <section id="caseView" hidden>
-    <h2 id="caseTitle"></h2>
-    <div class="grid3">
-      <div><h3>1. Raw (stays on this machine)</h3><pre id="cRaw"></pre></div>
-      <div><h3>2. Masked locally</h3><pre id="cMasked"></pre></div>
-      <div><h3>3. Exactly what was sent</h3><pre id="cSent"></pre></div>
-    </div>
-    <p id="cLeak"></p>
-    <div class="grid2" style="margin-top:8px">
-      <div>
-        <h3>4. Classification</h3>
-        <div id="cClass"></div>
-      </div>
-      <div>
-        <h3>5. 4P root cause</h3>
-        <div id="c4p"></div>
-      </div>
-    </div>
-    <div style="margin-top:14px">
-      <h3>6. Route and owner</h3>
-      <div id="cRoute"></div>
-    </div>
+  <section id="case">
+    <p class="eyebrow">Case detail</p>
+    <h2 id="caseTitle">No case open</h2>
+    <div id="caseBody"><p class="note">Run a conversation or open a saved case.</p></div>
   </section>
 
-  <section id="summary" hidden>
-    <h2>Summary of the saved run <span class="muted" id="runAt"></span></h2>
-    <div class="grid4" id="routeStats"></div>
-    <div class="grid3" style="margin-top:16px">
-      <div><h3>By reason</h3><div id="byReason"></div></div>
-      <div><h3>By top P</h3><div id="byP"></div></div>
-      <div><h3>By market</h3><div id="byMarket"></div></div>
-    </div>
-    <div class="grid2" style="margin-top:16px">
-      <div><h3>Review queue</h3><div id="reviewQ"></div></div>
-      <div><h3>Emerging (a human names these)</h3><div id="emergingQ"></div></div>
-    </div>
+  <section id="summary">
+    <p class="eyebrow">Summary</p>
+    <h2>What the saved run shows</h2>
+    <div id="summaryBody"><p class="note">No saved run yet. Run <code>python3 run.py</code>.</p></div>
   </section>
 
-  <section id="alertsSec" hidden>
-    <h2>Spike alert</h2>
-    <p class="muted" id="alertRule"></p>
-    <div id="alertTable"></div>
-    <h3 style="margin-top:14px">Risk cases (shown separately)</h3>
-    <div id="riskAlert"></div>
+  <section id="evaluation">
+    <p class="eyebrow">Evaluation</p>
+    <h2>How far to trust it</h2>
+    <div id="evalBody"><p class="note">Not measured. Run <code>python3 run_eval.py</code>.</p></div>
   </section>
-
-  <section id="evalSec" hidden>
-    <h2>Latest evaluation <span class="muted" id="evalAt"></span></h2>
-    <div id="evalBody"></div>
-  </section>
-</main>
+</div>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const hiTok = s => esc(s).replace(/\[[A-Z0-9_]+_\d+\]/g, m => `<span class="tok">${m}</span>`);
 const pct = x => Math.round(x * 100) + "%";
-const ROUTE_LABEL = {human_led: "Human-led", review_queue: "Review queue", emerging: "Emerging", auto_tag: "Auto-tag"};
+const REASON = {card_activation: "Card activation", payment_declined: "Payment declined",
+  invoice_reconciliation: "Invoice reconciliation", account_access: "Account access",
+  how_to_policy: "How-to and policy", other: "Other", unknown: "Unknown", not_classified: "Not classified"};
+const reason = k => REASON[k] || k;
+const words = k => k ? k.replace(/_/g, " ") : "";
+const PNAME = {people: "People", process: "Process", policy: "Policy", product: "Product"};
+const ROUTE = {auto_tag: "Auto-tag", review_queue: "Review", emerging: "Emerging", human_led: "Human-led", blocked: "Blocked"};
+const routeKey = rec => rec.mask_problem ? "blocked" : rec.route.route;
+const routeLabel = k => `<span class="route r-${k}">${ROUTE[k]}</span>`;
 let STATE = null;
 
-function topP(c) {
-  return Object.entries(c.four_p).sort((a, b) => b[1].score - a[1].score)[0][0];
+function topP(c) { return Object.entries(c.four_p).sort((a, b) => b[1].score - a[1].score)[0][0]; }
+
+function fadeIn(el) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); }
+
+function renderPanes(rec) {
+  const blocked = rec.mask_problem;
+  let state = "";
+  if (blocked) {
+    state = `<p class="state accent">Blocked: personal data detected after masking. Nothing was sent. (${esc(blocked)})</p>`;
+  } else {
+    state = `<p class="state">Leak check passed. <span class="faint">Masked: ${esc(rec.masked_tokens.join(", ") || "nothing found")}</span></p>`;
+  }
+  return `<div class="panes">
+      <div class="pane"><h3>Raw</h3><p class="note faint">Never leaves this machine.</p><pre>${esc(rec.raw)}</pre></div>
+      <div class="pane"><h3>Masked</h3><pre>${rec.masked ? hiTok(rec.masked) : '<span class="accent">Masking failed.</span>'}</pre></div>
+      <div class="pane"><h3>Sent to model</h3><pre>${rec.sent ? hiTok(rec.sent) : '<span class="faint">' + (blocked ? "Nothing was sent." : "Not sent yet.") + '</span>'}</pre></div>
+    </div>${state}`;
+}
+
+function renderCase(rec, phase) {
+  const m = rec.meta || {};
+  const where = [m.market, m.channel, m.date].filter(Boolean).join(", ");
+  $("caseTitle").textContent = `Case ${rec.id}` + (where ? ` (${where})` : "");
+  let html = renderPanes(rec);
+  const c = rec.classification;
+  if (phase === "classifying") {
+    html += `<p class="state status">Classifying...</p>`;
+  } else if (!c && !rec.mask_problem) {
+    html += `<p class="state accent">Classification unavailable. Nothing auto-tagged.</p>`
+         + (rec.error ? `<p class="note faint">${esc(rec.error)}</p>` : "");
+  }
+  if (c) {
+    const exp = m.expected_reason;
+    html += `<div class="grid2 block">
+      <div><h3>Contact reason</h3><dl class="kv">
+        <dt>Reason</dt><dd><b>${esc(reason(c.contact_reason))}</b>${c.sub_reason ? ", " + esc(words(c.sub_reason)) : ""}</dd>
+        ${exp ? `<dt>Label in case file</dt><dd>${esc(reason(exp))}${exp === c.contact_reason ? "" : ' <span class="accent">differs</span>'}</dd>` : ""}
+        <dt>Could also be</dt><dd>${c.ambiguous_with ? esc(reason(c.ambiguous_with)) : '<span class="faint">None</span>'}</dd>
+        <dt>Confidence</dt><dd>${c.confidence.toFixed(2)} <span class="faint">self-reported by the model</span></dd>
+        <dt>Product defect</dt><dd>${c.is_defect ? "Yes" : "No"}</dd>
+        <dt>Repeat contact</dt><dd>${c.is_repeat ? "Yes" : "No"}</dd>
+        <dt>Why</dt><dd>${esc(c.rationale)}</dd>
+        <dt>Model</dt><dd class="faint">${esc(rec.model)}, ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"}</dd>
+      </dl></div>
+      <div><h3>Root cause</h3>${renderFourP(c)}</div>
+    </div>`;
+  }
+  if (rec.route) {
+    const k = routeKey(rec);
+    html += `<div class="block"><h3>Route</h3><p>${routeLabel(k)} &nbsp;<span>${esc(rec.route.why)}</span></p>`;
+    if (rec.route.owners.length) {
+      html += `<h3 style="margin-top:24px">Proposed owners <span class="faint" style="text-transform:none;letter-spacing:0">(a person confirms)</span></h3><ul class="owners">`
+        + rec.route.owners.map(o => `<li><span class="fg">${esc(o.owner)}</span> <span class="faint">${PNAME[o.p]} ${o.score.toFixed(2)}</span></li>`).join("") + "</ul>";
+    }
+    html += "</div>";
+  }
+  $("caseBody").innerHTML = html;
+  fadeIn($("caseBody"));
+}
+
+function renderFourP(c) {
+  const top = topP(c);
+  return ["people", "process", "policy", "product"].map(p => {
+    const v = c.four_p[p];
+    return `<div class="prow"><div class="bar"><span class="name">${PNAME[p]}</span><div class="track"><div class="fill${p === top ? " lead" : ""}" style="width:${pct(v.score)}"></div></div><span class="val">${v.score.toFixed(2)}</span></div>`
+      + (v.quote ? `<p class="quote">"${esc(v.quote)}"</p>` : "") + "</div>";
+  }).join("");
 }
 
 function showCase(rec) {
-  $("caseView").hidden = false;
-  const m = rec.meta || {};
-  $("caseTitle").textContent = `Case ${rec.id}` + (m.market ? ` (${m.market}${m.channel ? ", " + m.channel : ""}${m.date ? ", " + m.date : ""})` : "");
-  $("cRaw").textContent = rec.raw;
-  $("cMasked").innerHTML = rec.masked ? hiTok(rec.masked) : '<span class="err">Masking failed.</span>';
-  $("cSent").innerHTML = rec.sent ? hiTok(rec.sent) : '<span class="err">Nothing was sent.</span>';
-  $("cLeak").innerHTML = rec.mask_problem
-    ? `<span class="err">Leak check blocked the API call: ${esc(rec.mask_problem)}</span>`
-    : `<span class="pass">Leak check passed.</span> <span class="muted">Masked: ${esc(rec.masked_tokens.join(", ") || "nothing")}</span>`;
-
-  const c = rec.classification;
-  if (c) {
-    const exp = (m.expected && m.expected.contact_reason) || m.expected_reason || m.expected_contact_reason;
-    $("cClass").innerHTML = `<dl class="kv">
-      <dt>Reason</dt><dd><b>${esc(c.contact_reason)}</b>${c.sub_reason ? " / " + esc(c.sub_reason) : ""}</dd>
-      ${exp ? `<dt>Expected</dt><dd>${esc(exp)} ${exp === c.contact_reason ? '<span class="pass">match</span>' : '<span class="fail">miss</span>'}</dd>` : ""}
-      <dt>Ambiguous with</dt><dd>${esc(c.ambiguous_with || "none")}</dd>
-      <dt>Confidence</dt><dd>${c.confidence.toFixed(2)} <span class="muted">(self-reported)</span></dd>
-      <dt>Defect</dt><dd>${c.is_defect ? "yes" : "no"}</dd>
-      <dt>Repeat</dt><dd>${c.is_repeat ? "yes" : "no"}</dd>
-      <dt>Rationale</dt><dd>${esc(c.rationale)}</dd>
-      <dt>Model</dt><dd class="muted">${esc(rec.model)}, ${rec.attempts} attempt(s)</dd></dl>`;
-    $("c4p").innerHTML = ["people", "process", "policy", "product"].map(p => {
-      const v = c.four_p[p];
-      return `<div class="bar"><span>${p}</span><div class="track"><div class="fill" style="width:${pct(v.score)}"></div></div><span>${v.score.toFixed(2)}</span></div>`
-        + (v.quote ? `<div class="quote">"${esc(v.quote)}"</div>` : "");
-    }).join("");
-  } else {
-    $("cClass").innerHTML = `<p class="err">Classification unavailable. Nothing auto-tagged.</p><p class="muted">${esc(rec.error || "")}</p>`;
-    $("c4p").innerHTML = '<p class="muted">No scores.</p>';
-  }
-  const r = rec.route;
-  $("cRoute").innerHTML = `<p><span class="badge ${r.route}">${ROUTE_LABEL[r.route]}</span> ${esc(r.why)}</p>`
-    + (r.owners.length ? "<ul>" + r.owners.map(o => `<li>${esc(o.owner)} <span class="muted">(${o.p} ${o.score.toFixed(2)})</span></li>`).join("") + "</ul>" : "");
-  $("caseView").scrollIntoView({behavior: "smooth", block: "start"});
+  renderCase(rec, "done");
+  location.hash = "case";
 }
 
-function countTable(counts, total) {
+function shareTable(title, counts, total, label) {
   const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  return "<table>" + rows.map(([k, n]) =>
-    `<tr><td>${esc(k)}</td><td class="num">${n}</td><td class="num muted">${pct(n / total)}</td></tr>`).join("") + "</table>";
+  return `<div><h3>${title}</h3><div class="tscroll"><table><tr><th>${label}</th><th class="num">Cases</th><th class="num">Share</th><th></th></tr>`
+    + rows.map(([k, n]) => `<tr><td>${esc(k)}</td><td class="num">${n}</td><td class="num">${pct(n / total)}</td><td class="barcell"><div class="track"><div class="fill" style="width:${pct(n / total)}"></div></div></td></tr>`).join("")
+    + "</table></div>";
 }
 
-function caseList(recs) {
-  if (!recs.length) return '<p class="muted">None.</p>';
-  return "<table><tr><th>Case</th><th>Reason</th><th>Why</th></tr>" + recs.map(r =>
-    `<tr class="click" data-id="${esc(r.id)}"><td>${esc(r.id)}</td><td>${esc(r.classification ? r.classification.contact_reason : "-")}</td><td>${esc(r.route.why)}</td></tr>`).join("") + "</table>";
+function caseTable(title, recs) {
+  if (!recs.length) return `<div><h3>${title}</h3><p class="note">None.</p></div>`;
+  return `<div><h3>${title} (${recs.length})</h3><div class="tscroll"><table><tr><th>Case</th><th>Reason</th><th>Why</th></tr>` + recs.map(r =>
+    `<tr class="click" data-id="${esc(r.id)}"><td>${esc(r.id)}</td><td>${esc(reason(r.classification ? r.classification.contact_reason : "not_classified"))}</td><td>${esc(r.route.why)}</td></tr>`).join("") + "</table></div></div>";
+}
+
+function renderSummary(s) {
+  const res = s.results;
+  if (!res) return;
+  const recs = res.records;
+  const byRoute = {}, byReason = {}, byP = {}, byMarket = {};
+  for (const r of recs) {
+    const k = routeKey(r); byRoute[k] = (byRoute[k] || 0) + 1;
+    const rr = reason(r.classification ? r.classification.contact_reason : "not_classified");
+    byReason[rr] = (byReason[rr] || 0) + 1;
+    if (r.classification) { const p = PNAME[topP(r.classification)]; byP[p] = (byP[p] || 0) + 1; }
+    const mk = (r.meta && r.meta.market) || "Not set"; byMarket[mk] = (byMarket[mk] || 0) + 1;
+  }
+  const nP = Object.values(byP).reduce((a, b) => a + b, 0) || 1;
+  const when = res.run_at.replace("T", " ").slice(0, 16);
+  let html = `<p class="note" style="margin:-12px 0 32px">Saved run from ${esc(when)}, ${recs.length} cases.</p>`;
+
+  html += `<div class="stats">` + ["auto_tag", "review_queue", "emerging", "human_led"].map(k =>
+    `<div class="stat"><div class="num${k === "human_led" && byRoute[k] ? " key" : ""}">${byRoute[k] || 0}</div><div class="lbl">${{auto_tag: "Auto-tagged", review_queue: "In the review queue", emerging: "Emerging, a person names them", human_led: "Human-led"}[k]}</div></div>`).join("") + "</div>";
+  if (byRoute.blocked) html += `<p class="state accent">${byRoute.blocked} blocked by the leak check. Nothing was sent for them.</p>`;
+
+  const a = s.alerts;
+  html += `<div class="block"><h3>Spike check</h3>`;
+  if (!a || a.error) {
+    html += `<p class="note">${esc(a ? a.error : "Not measured.")}</p>`;
+  } else {
+    const days = s.config.alerts.recent_days;
+    const alerts = a.rows.filter(r => r.alert);
+    for (const r of alerts) {
+      const inWindow = recs.filter(x => (x.classification ? x.classification.contact_reason : "not_classified") === r.reason && x.meta.date && x.meta.date >= a.recent_window.slice(0, 10));
+      const allHuman = inWindow.length && inWindow.every(x => x.route.route === "human_led");
+      const ratio = r.ratio === null ? "new this window" : `${r.ratio.toFixed(1)}× baseline share`;
+      html += `<p class="alert">${esc(reason(r.reason))}: ${r.recent} cases in the last ${days} days, ${ratio}.${allHuman ? " Sent to a human." : " Review the cases."}</p>`;
+    }
+    const k = a.risk;
+    if (k.alert) html += `<p class="alert">Risk words: ${k.recent} cases in the last ${days} days vs ${k.baseline} in the ${s.config.alerts.baseline_days} days before. All sent to a human.</p>`;
+    if (!alerts.length && !k.alert) html += `<p class="note">No spike. Rule: ${esc(a.rule)}.</p>`;
+    html += `<p class="note" style="margin-bottom:16px">Last ${days} days (${esc(a.recent_window)}) compared with the ${s.config.alerts.baseline_days} days before (${esc(a.baseline_window)}). Alert when the ${esc(a.rule)}.</p>`;
+    html += `<div class="tscroll"><table><tr><th>Contact reason</th><th class="num">Last ${days} days</th><th class="num">Share</th><th class="num">Before</th><th class="num">Share</th><th class="num">Ratio</th></tr>`
+      + a.rows.map(r => `<tr><td>${esc(reason(r.reason))}</td><td class="num">${r.recent}</td><td class="num">${pct(r.recent_share)}</td><td class="num">${r.baseline}</td><td class="num">${pct(r.baseline_share)}</td><td class="num${r.alert ? " accent" : ""}">${r.ratio === null ? "New" : r.ratio.toFixed(1) + "×"}</td></tr>`).join("")
+      + "</table></div>";
+  }
+  html += "</div>";
+
+  html += `<div class="grid3 block">${shareTable("By contact reason", byReason, recs.length, "Reason")}${shareTable("By root cause (top P)", byP, nP, "P")}${shareTable("By market", byMarket, recs.length, "Market")}</div>`;
+  html += `<div class="grid3 block">${caseTable("Review", recs.filter(r => r.route.route === "review_queue"))}${caseTable("Emerging", recs.filter(r => r.route.route === "emerging"))}${caseTable("Human-led", recs.filter(r => r.route.route === "human_led"))}</div>`;
+  $("summaryBody").innerHTML = html;
+}
+
+function renderEval(e) {
+  if (!e) return;
+  const leak = e.pii_in_sent.length, risk = e.risk_not_human_led.length;
+  const tp = e.top_p_agreement;
+  $("evalBody").innerHTML = `<p class="note" style="margin:-12px 0 32px">Eval run ${esc(e.run_at.replace("_", " "))}, real model, ${e.labeled} labeled cases.</p>
+    <div class="stats">
+      <div class="stat"><div class="num">${pct(e.accuracy)}</div><div class="lbl">Contact reason matches the label (${e.correct} of ${e.labeled}). Gate ${pct(e.accuracy_gate)}.</div></div>
+      <div class="stat"><div class="num${leak ? " key" : ""}">${leak}</div><div class="lbl">Personal data found in what was sent. Must be 0.</div></div>
+      <div class="stat"><div class="num${risk ? " key" : ""}">${risk}</div><div class="lbl">Risk cases not sent to a human. Must be 0.</div></div>
+      <div class="stat"><div class="num">${e.activation_decline_confusions.length}</div><div class="lbl">Activation vs decline confusions.</div></div>
+    </div>
+    <div class="stats block">
+      <div class="stat"><div class="num">${tp === undefined || tp === null ? '<span class="text">Not measured</span>' : pct(tp)}</div><div class="lbl">Top P matches the label${tp === undefined || tp === null ? "" : ` (${e.top_p_matched} of ${e.top_p_labeled})`}. Tracked, not gated: owners are proposals.</div></div>
+      <div class="stat"><div class="num text">Not measured</div><div class="lbl">Agreement between two human reviewers. Needed before Gate 0 can pass.</div></div>
+    </div>
+    <p class="block">Gate 0 offline checks: <span class="fg">${e.passes ? "Pass" : '<span class="accent">Fail</span>'}</span>. <span class="note">The cases and labels were written with AI help, so this is agreement with reviewed labels, not real-world accuracy.</span></p>`;
 }
 
 function render(s) {
   STATE = s;
   const rt = s.config.routing;
-  $("cfgline").textContent = `Model ${s.config.model}. Auto-tag at ${rt.auto_tag_min_confidence}, review from ${rt.review_min_confidence}, ${rt.risk_words.length} risk words. Read live from config.yaml.`;
-  const res = s.results;
+  $("cfgline").textContent = `Model ${s.config.model}. Auto-tag at ${rt.auto_tag_min_confidence.toFixed(2)}, review from ${rt.review_min_confidence.toFixed(2)}, repeats to review ${rt.repeat_to_review ? "on" : "off"}, ${rt.risk_words.length} risk words. Read live from config.yaml.`;
   const sel = $("savedSel");
-  if (res) {
-    const recs = res.records;
-    sel.innerHTML = '<option value="">choose a case</option>' + recs.map(r =>
-      `<option value="${esc(r.id)}">${esc(r.id)}: ${esc(r.classification ? r.classification.contact_reason : "not classified")}, ${ROUTE_LABEL[r.route.route]}</option>`).join("");
-    $("summary").hidden = false;
-    $("runAt").textContent = `(${res.run_at}, ${recs.length} cases)`;
-    const byRoute = {}, byReason = {}, byP = {}, byMarket = {};
-    for (const r of recs) {
-      byRoute[r.route.route] = (byRoute[r.route.route] || 0) + 1;
-      const k = r.classification ? r.classification.contact_reason : "not classified";
-      byReason[k] = (byReason[k] || 0) + 1;
-      if (r.classification) { const p = topP(r.classification); byP[p] = (byP[p] || 0) + 1; }
-      const mk = (r.meta && r.meta.market) || "unknown";
-      byMarket[mk] = (byMarket[mk] || 0) + 1;
-    }
-    $("routeStats").innerHTML = ["auto_tag", "review_queue", "emerging", "human_led"].map(k =>
-      `<div><span class="badge ${k}">${ROUTE_LABEL[k]}</span><div class="stat">${byRoute[k] || 0}</div></div>`).join("");
-    $("byReason").innerHTML = countTable(byReason, recs.length);
-    $("byP").innerHTML = countTable(byP, Object.values(byP).reduce((a, b) => a + b, 0) || 1);
-    $("byMarket").innerHTML = countTable(byMarket, recs.length);
-    $("reviewQ").innerHTML = caseList(recs.filter(r => r.route.route === "review_queue"));
-    $("emergingQ").innerHTML = caseList(recs.filter(r => r.route.route === "emerging"));
+  if (s.results) {
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Choose a case</option>' + s.results.records.map(r =>
+      `<option value="${esc(r.id)}">${esc(r.id)}, ${esc(reason(r.classification ? r.classification.contact_reason : "not_classified"))}, ${ROUTE[routeKey(r)]}</option>`).join("");
+    sel.value = keep;
   }
-  const a = s.alerts;
-  if (a) {
-    $("alertsSec").hidden = false;
-    if (a.error) { $("alertTable").innerHTML = `<p class="muted">${esc(a.error)}</p>`; }
-    else {
-      $("alertRule").textContent = `Last window ${a.recent_window} vs ${a.baseline_window}. Alert when ${a.rule}.`;
-      $("alertTable").innerHTML = "<table><tr><th>Reason</th><th class='num'>Recent</th><th class='num'>Share</th><th class='num'>Baseline</th><th class='num'>Share</th><th class='num'>Ratio</th><th>Alert</th></tr>"
-        + a.rows.map(r => `<tr><td>${esc(r.reason)}</td><td class="num">${r.recent}</td><td class="num">${pct(r.recent_share)}</td><td class="num">${r.baseline}</td><td class="num">${pct(r.baseline_share)}</td><td class="num">${r.ratio === null ? "new" : r.ratio.toFixed(2)}</td><td>${r.alert ? '<span class="alert">ALERT</span>' : ""}</td></tr>`).join("") + "</table>";
-      const k = a.risk;
-      $("riskAlert").innerHTML = `<p>${k.recent} risk case(s) in the last window (${pct(k.recent_share)}) vs ${k.baseline} in the baseline (${pct(k.baseline_share)}). ${k.alert ? '<span class="alert">ALERT</span>' : "No alert."} All risk cases are human-led.</p>`;
-    }
-  }
-  const e = s.eval;
-  if (e) {
-    $("evalSec").hidden = false;
-    $("evalAt").textContent = `(${e.run_at})`;
-    $("evalBody").innerHTML = `<table>
-      <tr><th>Check</th><th>Result</th><th>Target</th></tr>
-      <tr><td>Reason accuracy</td><td>${pct(e.accuracy)} (${e.correct}/${e.labeled})</td><td>at least ${pct(e.accuracy_gate)}</td></tr>
-      <tr><td>Activation vs decline confusions</td><td>${e.activation_decline_confusions.length}</td><td>as few as possible</td></tr>
-      <tr><td>PII found in what was sent</td><td>${e.pii_in_sent.length}</td><td>0</td></tr>
-      <tr><td>Risk cases not sent to a human</td><td>${e.risk_not_human_led.length}</td><td>0</td></tr></table>
-      <p>Gate 0 offline checks: <span class="${e.passes ? "pass" : "fail"}">${e.passes ? "PASS" : "FAIL"}</span>
-      <span class="muted">Human-human agreement not yet measured. Labels were written with AI help, so this is agreement with reviewed labels, not real-world accuracy.</span></p>`;
-  }
+  renderSummary(s);
+  renderEval(s.eval);
 }
 
 async function load() {
@@ -245,25 +363,39 @@ async function load() {
     render(await (await fetch("/api/state")).json());
     const want = new URLSearchParams(location.search).get("case");  // link straight to a case: /?case=C024
     const rec = want && STATE.results && STATE.results.records.find(r => r.id === want);
-    if (rec && $("caseView").hidden) showCase(rec);
+    if (rec) renderCase(rec, "done");
+  } catch (e) {
+    $("cfgline").innerHTML = '<span class="accent">Could not load the saved run.</span>';
   }
-  catch (e) { $("status").textContent = "Could not load saved state."; }
+}
+
+async function post(url, body) {
+  const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || r.status);
+  return data;
 }
 
 $("runBtn").onclick = async () => {
   const text = $("input").value.trim();
   if (!text) { $("status").textContent = "Paste a conversation first."; return; }
   $("runBtn").disabled = true;
-  $("status").textContent = "Masking locally, checking for leaks, then classifying...";
+  $("status").textContent = "Masking locally...";
   try {
-    const r = await fetch("/api/run", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text})});
-    const rec = await r.json();
-    if (!r.ok) throw new Error(rec.error || r.status);
-    showCase(rec);
+    let rec = await post("/api/mask", {text, market: $("market").value, channel: $("channel").value});
+    renderCase(rec, rec.mask_problem ? "blocked" : "classifying");
+    location.hash = "case";
+    if (!rec.mask_problem) {
+      $("status").textContent = "Classifying...";
+      rec = await post("/api/classify", {id: rec.id});
+    } else {
+      rec = await post("/api/classify", {id: rec.id});  // routes it to a person; nothing is sent
+    }
+    renderCase(rec, "done");
     $("status").textContent = "";
-    load();  // pick up any config edits in the header line
+    load();  // pick up config edits in the settings line
   } catch (e) {
-    $("status").innerHTML = `<span class="err">Run failed: ${esc(e.message)}</span>`;
+    $("status").innerHTML = `<span class="accent">Run failed: ${esc(e.message)}</span>`;
   } finally { $("runBtn").disabled = false; }
 };
 $("savedSel").onchange = () => {

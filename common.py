@@ -44,6 +44,10 @@ def normalize(text):
     return "".join(c for c in text if not unicodedata.combining(c))
 
 
+# Ollama is local by design: never route its calls through a proxy.
+_LOCAL = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
 def ollama_generate(cfg, prompt, json_format=True):
     """Call the local Ollama model. Returns the response text."""
     body = {"model": cfg["ollama"]["model"], "prompt": prompt, "stream": False, "keep_alive": "30m",
@@ -53,11 +57,11 @@ def ollama_generate(cfg, prompt, json_format=True):
     req = urllib.request.Request(
         cfg["ollama"]["url"].rstrip("/") + "/api/generate",
         data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=cfg["ollama"]["timeout_seconds"]) as r:
+    with _LOCAL.open(req, timeout=cfg["ollama"]["timeout_seconds"]) as r:
         return json.loads(r.read())["response"]
 
 
 def ollama_models(cfg):
     req = urllib.request.Request(cfg["ollama"]["url"].rstrip("/") + "/api/tags")
-    with urllib.request.urlopen(req, timeout=5) as r:
+    with _LOCAL.open(req, timeout=5) as r:
         return [m["name"] for m in json.loads(r.read())["models"]]

@@ -1,0 +1,31 @@
+{
+  "run_at": "2026-10-22_222751",
+  "cases": 60,
+  "labeled": 60,
+  "correct": 59,
+  "accuracy": 0.983,
+  "unclassified": 0,
+  "accuracy_gate": 0.85,
+  "activation_decline_confusions": [],
+  "pii_in_sent": [],
+  "risk_not_human_led": [],
+  "routes": {
+    "auto_tag": 40,
+    "review_queue": 11,
+    "emerging": 3,
+    "human_led": 6
+  },
+  "misses": [
+    {
+      "id": "C041",
+      "expected": "unknown",
+      "got": "invoice_reconciliation",
+      "confidence": 0.8,
+      "route": "review_queue"
+    }
+  ],
+  "top_p_agreement": 0.533,
+  "top_p_matched": 32,
+  "top_p_labeled": 60,
+  "passes": true
+}

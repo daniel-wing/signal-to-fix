@@ -19,13 +19,14 @@ llm:
   api_key_env: ANTHROPIC_API_KEY   # only for backend: api; name of the variable, never the key itself
   effort: low                      # low | medium | high
   max_tokens: 4000
-  timeout_seconds: 90
+  timeout_seconds: 30              # normal calls take about 5s; offline fails safe after this
 
 # Routing (A6: demo policy, not validated; confidence is self-reported by the model).
 routing:
   auto_tag_min_confidence: 0.85    # at or above: auto-tag
   review_min_confidence: 0.60      # 0.60 to below 0.85: review queue; below 0.60: human-led
   secondary_owner_min_score: 0.50  # any other P above this also gets an owner
+  repeat_to_review: true           # repeat contacts go to the review queue (production: sample them)
   # Any of these words forces human-led handling. Matched as whole words on the
   # masked text, lowercase, accents ignored. Add a line to add a word.
   risk_words:

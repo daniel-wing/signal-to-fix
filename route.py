@@ -61,12 +61,14 @@ def route(cfg, masked_text, mask_problem, classification):
     # 2. Unknown reason.
     if result["contact_reason"] == "unknown":
         return out("emerging", "Reason unknown: a human names it")
-    # 3-5. Confidence bands and activation vs decline ambiguity.
+    # 3-5. Confidence bands, activation vs decline ambiguity, repeat contacts.
     conf = result["confidence"]
     if conf < r["review_min_confidence"]:
         return out("human_led", f"Confidence {conf:.2f} below {r['review_min_confidence']:.2f}")
     if result["contact_reason"] in ACT_DEC and result["ambiguous_with"] in ACT_DEC:
         return out("review_queue", "Activation vs decline ambiguity")
+    if r.get("repeat_to_review") and result["is_repeat"]:
+        return out("review_queue", "Repeat contact: the first contact did not solve it")
     if conf < r["auto_tag_min_confidence"]:
         return out("review_queue", f"Confidence {conf:.2f} below {r['auto_tag_min_confidence']:.2f}")
     return out("auto_tag", f"Confidence {conf:.2f}")

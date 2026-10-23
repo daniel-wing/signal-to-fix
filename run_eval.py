@@ -42,6 +42,7 @@ def score(cfg, records, cases):
     pii_sent = []
     risk_missed = []
     routes = {}
+    p_labeled = p_match = 0
     for r in records:
         routes[r["route"]["route"]] = routes.get(r["route"]["route"], 0) + 1
         exp = expected(r["meta"], "contact_reason")
@@ -58,6 +59,11 @@ def score(cfg, records, cases):
                                "route": r["route"]["route"]})
                 if exp in ACT_DEC and got in ACT_DEC:
                     act_dec.append(f"{r['id']}: expected {exp}, got {got}")
+        exp_p = expected(r["meta"], "top_p")
+        if exp_p and r["classification"]:
+            p_labeled += 1
+            fp = r["classification"]["four_p"]
+            p_match += max(fp, key=lambda p: fp[p]["score"]) == exp_p
         if r["sent"]:
             planted = planted_values(by_id.get(r["id"], {}))
             found = [p for p in planted if p and normalize(p) in normalize(r["sent"])]
@@ -73,6 +79,8 @@ def score(cfg, records, cases):
         "unclassified": unclassified, "accuracy_gate": gate,
         "activation_decline_confusions": act_dec, "pii_in_sent": pii_sent,
         "risk_not_human_led": risk_missed, "routes": routes, "misses": misses,
+        "top_p_agreement": round(p_match / p_labeled, 3) if p_labeled else None,
+        "top_p_matched": p_match, "top_p_labeled": p_labeled,
         "passes": acc >= gate and not pii_sent and not risk_missed,
     }
 
@@ -89,7 +97,9 @@ def report_md(cfg, s, run_at, source):
         f"| Activation vs decline confusions | {len(s['activation_decline_confusions'])} | as few as possible |",
         f"| PII found in what was sent | {len(s['pii_in_sent'])} | 0 |",
         f"| Risk cases not sent to a human | {len(s['risk_not_human_led'])} | 0 |",
-        f"| Not classified (blocked or API failure) | {s['unclassified']} | counted as wrong |", "",
+        f"| Not classified (blocked or model failure) | {s['unclassified']} | counted as wrong |",
+        f"| Top P agreement (tracked, not gated) | {pct(s['top_p_agreement'] or 0)} ({s['top_p_matched']}/{s['top_p_labeled']}) | none; owners are proposals a person confirms |",
+        "| Human-human agreement | Not measured | needed for Gate 0 |", "",
         f"**Gate 0 offline checks: {'PASS' if s['passes'] else 'FAIL'}** "
         "(human-human agreement is not yet measured, so the full gate cannot pass yet).", "",
         "Routes: " + ", ".join(f"{k} {v}" for k, v in sorted(s["routes"].items())), "",

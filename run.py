@@ -60,8 +60,8 @@ def load_cases(cfg):
     return cases.get("cases", []) if isinstance(cases, dict) else cases
 
 
-def process(cfg, case_id, raw, meta=None):
-    """One case through every stage. Only masked text that passed the leak check is sent."""
+def mask_step(cfg, case_id, raw, meta=None):
+    """Stage 1-2: mask locally and run the leak check. Nothing leaves the machine here."""
     rec = {"id": case_id, "meta": meta or {}, "raw": raw, "masked": None, "masked_tokens": [],
            "mask_problem": None, "sent": None, "classification": None, "model": None,
            "attempts": 0, "error": None, "route": None}
@@ -76,7 +76,11 @@ def process(cfg, case_id, raw, meta=None):
                 l.split(":")[0] for l in leaks)
     except Exception as e:
         rec["mask_problem"] = f"masking failed ({type(e).__name__})"
+    return rec
 
+
+def classify_step(cfg, rec):
+    """Stage 3-4: send the masked text only if the leak check passed, then route."""
     cls = None
     if not rec["mask_problem"]:
         cls = classify(cfg, rec["masked"])
@@ -84,6 +88,11 @@ def process(cfg, case_id, raw, meta=None):
                    attempts=cls["attempts"], error=cls["error"])
     rec["route"] = route(cfg, rec["masked"] or "", rec["mask_problem"], cls)
     return rec
+
+
+def process(cfg, case_id, raw, meta=None):
+    """One case through every stage. Only masked text that passed the leak check is sent."""
+    return classify_step(cfg, mask_step(cfg, case_id, raw, meta))
 
 
 def show(rec):
@@ -161,6 +170,7 @@ def serve():
     from itertools import count
 
     live_ids = count(1)
+    pending = {}  # live cases masked but not yet classified, by id
 
     class Handler(BaseHTTPRequestHandler):
         def send(self, code, body, ctype="application/json"):
@@ -181,13 +191,21 @@ def serve():
                 self.send(404, {"error": "not found"})
 
         def do_POST(self):
-            if self.path != "/api/run":
-                return self.send(404, {"error": "not found"})
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
-            text = str(body.get("text", "")).strip()
-            if not text:
-                return self.send(400, {"error": "Paste a conversation first."})
-            self.send(200, process(load_config(), f"LIVE-{next(live_ids)}", text))
+            if self.path == "/api/mask":
+                text = str(body.get("text", "")).strip()
+                if not text:
+                    return self.send(400, {"error": "Paste a conversation first."})
+                meta = {k: str(body[k]) for k in ("market", "channel") if body.get(k)}
+                rec = mask_step(load_config(), f"LIVE-{next(live_ids)}", text, meta)
+                pending[rec["id"]] = rec
+                return self.send(200, rec)
+            if self.path == "/api/classify":
+                rec = pending.pop(str(body.get("id", "")), None)
+                if not rec:
+                    return self.send(404, {"error": "Unknown case. Run it again."})
+                return self.send(200, classify_step(load_config(), rec))
+            self.send(404, {"error": "not found"})
 
         def log_message(self, fmt, *args):
             pass

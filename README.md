@@ -2,6 +2,8 @@
 
 A small working prototype of one internal AI workflow for LumenPay (a synthetic company; business case Deliverable 4). It turns closed support conversations into classified, routed signals for Operations and Product, without sending personal data to the cloud.
 
+It does not make business recommendations. It gives the people who review cases faster answers, actionable items and specific cases with context, so they can write the VOC proposal from this and from their own CX work.
+
 **All data is synthetic.** No real customer, company or system is involved.
 
 ## What it does
@@ -15,7 +17,7 @@ Trigger: a closed support conversation (from the case file, or pasted into the p
    1. Masking problem or a risk word (fraud, unrecognized charge, account takeover, lockout, legal): **human-led**.
    2. Reason unknown: **emerging** list, for a human to name. Never forced into "other".
    3. Confidence below 0.60: **human-led**.
-   4. Confidence 0.60 to below 0.85, or activation vs decline ambiguity: **review queue**.
+   4. Confidence 0.60 to below 0.85, activation vs decline ambiguity, or a repeat contact: **review queue**.
    5. Confidence 0.85 and above: **auto-tag**.
 
    Owner by the top P, plus any other P above 0.50: People = team lead coaching; Process = process owner; Policy = cost-benefit review; Product = bug draft if it is a defect, otherwise a user-story candidate for the PM weekly review.
@@ -65,7 +67,8 @@ Open `http://localhost:8000/?case=C024` to jump straight to a case. Paste-ready 
 - **Alert rule:** `alerts` section (window lengths, ratio, minimum cases).
 - **Ollama on another machine:** `ollama.url`.
 - **Break the model call on purpose:** set `llm.cli: claude-broken`; the case shows "Classification unavailable. Nothing auto-tagged." and goes to a human.
-- **No network:** masking still runs locally; classification fails safe to a human; the saved run stays viewable on the page.
+- **No network:** masking still runs locally; classification fails safe to a human after `llm.timeout_seconds` (30s); the saved run stays viewable on the page. Tested by simulation (the model call routed to a dead proxy), not by switching Wi-Fi off.
+- **Repeat contacts:** `repeat_to_review: true` sends them to the review queue. In production you would sample them: about 27% of cases are repeats, more than leaders can review.
 
 ## Privacy claim
 
@@ -75,7 +78,7 @@ Notes: the evidence pack says classification and routing on pseudonymized fields
 
 ## Evaluation
 
-Latest result (eval run 2, 60 cases): reason accuracy 98% (59/60), 0 activation vs decline confusions, 0 PII in what was sent, 0 risk cases missed. The first run missed 4 lockout cases; see `AI_RECORD.md`. Masking and risk words were tuned on these same 60 cases, so these are in-sample numbers; a fresh held-out set is the next check.
+Latest result (eval run 4, 60 cases): reason accuracy 98% (59/60), 0 activation vs decline confusions, 0 PII in what was sent, 0 risk cases missed. Top P agreement 52% (31/60) is tracked but not gated: owners are proposals a person confirms. Human-human agreement is not measured yet. The first run missed 4 lockout cases; see `AI_RECORD.md`. Masking and risk words were tuned on these same 60 cases, so these are in-sample numbers; a fresh held-out set is the next check.
 
 `run_eval.py` compares the model with the expected labels in the case file and reports reason accuracy, activation vs decline confusions, PII found in what was sent (must be 0) and risk cases not sent to a human (must be 0). Each run is saved as `eval_runs/<timestamp>.md` with the config and prompt used, and committed.
 
