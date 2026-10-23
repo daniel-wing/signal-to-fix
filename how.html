@@ -51,6 +51,8 @@ svg text { font-family: Inter, system-ui, sans-serif; }
 @media (max-width: 720px) { .diagram-wide { display: none; } }
 .rule { border-left: 2px solid var(--accent); padding: 2px 0 2px 16px; margin: 0 0 16px; }
 .rule b { color: var(--fg); font-weight: 600; }
+.foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.foot a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--faint); }
 </style>
 </head>
 <body>
@@ -165,6 +167,10 @@ svg text { font-family: Inter, system-ui, sans-serif; }
       <div class="item"><p class="k">Spanish only for now</p><p>Portuguese for Brazil is a next step.</p></div>
     </div>
   </section>
+  <footer class="foot">
+    <span>UpstreamW, a prototype for the LumenPay business case. Synthetic data only.</span>
+    <a href="https://github.com/daniel-wing/signal-to-fix" target="_blank" rel="noopener">Code and documentation on GitHub (private, sign-in needed)</a>
+  </footer>
 </div>
 </body>
 </html>

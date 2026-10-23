@@ -155,6 +155,8 @@ table.matrix td.cell { min-width: 110px; }
 .ticker .now { color: var(--body); }
 .ticker .just { color: var(--muted); font-size: 13px; }
 .ticker .just b { color: var(--fg); font-weight: 500; }
+.foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.foot a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--faint); }
 </style>
 </head>
 <body>
@@ -258,6 +260,10 @@ table.matrix td.cell { min-width: 110px; }
     <h2>Tested on 60 labeled cases</h2>
     <div id="evalBody"><p class="note">Not measured.</p></div>
   </section>
+  <footer class="foot">
+    <span>UpstreamW, a prototype for the LumenPay business case. Synthetic data only.</span>
+    <a href="https://github.com/daniel-wing/signal-to-fix" target="_blank" rel="noopener">Code and documentation on GitHub (private, sign-in needed)</a>
+  </footer>
 </div>
 <script>
 const $ = id => document.getElementById(id);
